@@ -1272,7 +1272,7 @@
         -1.9027396559197243,
         0.4191014343325473
       ],
-      "feature_scaling": "training-split mean and standard deviation, reused for prediction",
+      "feature_scaling": "the mean and standard deviation of the training split, reused at prediction time",
       "intercept": 1.586505429677179,
       "max_abs_coefficient_error_vs_truth": 0.09726034408027573,
       "test_mse": 1.070336448043892,
@@ -1295,6 +1295,6 @@
   },
   "example": "linear_regression",
   "generated_by": "examples/linear_regression.py",
-  "protocol": "Every model is fitted on the training split only; the held-out split is used exclusively for the reported R2 and MSE values.",
+  "protocol": "The script fits every model on the training split only and uses the held-out split for the reported R2 and MSE values alone.",
   "seed": 42
 }

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: format - lint - tests - smoke
+    name: Format, lint, tests, and smoke workflow
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -31,7 +31,7 @@ jobs:
         run: uv run ruff format --check .
       - name: Lint
         run: uv run ruff check .
-      - name: Tests (fictional fixtures only, no raw dataset)
+      - name: Tests with fictional fixtures
         run: uv run pytest
-      - name: Smoke (fictional fixture, no raw dataset)
+      - name: Smoke workflow with fictional data
         run: uv run nfl-showcase smoke

@@ -25,7 +25,11 @@ HOLDOUT_START = "2017-09-01"
 
 
 class _ConstantPassPredictor:
-    """Minimal estimator used to check metric semantics against known expectations."""
+    """A minimal estimator that predicts one label for every row.
+
+    Metric tests use it so the result can be checked against hand-computed
+    values.
+    """
 
     def __init__(self, label: str = "pass") -> None:
         self.label = label

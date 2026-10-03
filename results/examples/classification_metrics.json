@@ -135,8 +135,8 @@
     },
     "n_features": 30,
     "n_samples": 569,
-    "notes": "A single stratified split is reported; the scaler and KNN's k are fitted on the training split only. These scores describe this split, not the dataset as a whole, and GaussianNB is scale invariant, so its scaler only keeps the pipeline convention.",
-    "source": "sklearn.datasets.load_breast_cancer (bundled, no download)"
+    "notes": "The script reports one stratified split and fits the scaler and KNN's k on the training split only, so these scores describe that split rather than the dataset as a whole. GaussianNB is scale invariant, so its scaler changes no result and only matches the structure of the KNN pipeline.",
+    "source": "sklearn.datasets.load_breast_cancer, bundled with scikit-learn, so the script downloads nothing"
   },
   "environment": {
     "matplotlib": "3.9.2",
@@ -152,7 +152,7 @@
       "ham": 16,
       "spam": 16
     },
-    "corpus": "Original fictional teaching messages written for this repository; not a real SMS dataset and not a benchmark of any kind.",
+    "corpus": "These messages are original fictional teaching text written for this repository, not a real SMS dataset and not a benchmark.",
     "cross_validation": {
       "folds": 5,
       "macro_f1_mean": 0.9003174603174603,
@@ -164,7 +164,7 @@
         0.8285714285714285
       ],
       "macro_f1_std": 0.08159656546751669,
-      "vocabulary_fit": "inside each fold through the pipeline (train-only)"
+      "vocabulary_fit": "each fold fits the vectorizer inside the pipeline, on that fold's training rows only"
     },
     "holdout": {
       "accuracy": 1.0,
@@ -216,11 +216,11 @@
       "test_fraction": 0.25,
       "vocabulary_size_train": 361
     },
-    "limitations": "About thirty fictional sentences; any high score reflects this toy corpus, not real spam-filter quality, and the corpus is far too small for generalization claims.",
+    "limitations": "The corpus holds about thirty fictional sentences. A high score here describes this toy corpus, not real spam filtering, and the corpus is far too small to support generalization claims.",
     "n_messages": 32,
     "pipeline": "TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True) -> MultinomialNB(alpha=1.0)",
     "token_indicators": {
-      "fit_on": "training split only (the same pipeline fit that produced the holdout metrics; no full-corpus refit)",
+      "fit_on": "the training split only, from the same pipeline fit that produced the holdout metrics, with no refit on the full corpus",
       "most_ham_associated": [
         "room",
         "at",

@@ -1,7 +1,8 @@
 """Fixture builders shared by the consumer-visible feature tests.
 
-All rows are original fictional plays; ``RAW_COLUMNS`` defaults keep each test focused
-on the behavior under inspection.
+All rows are original fictional plays. Every call to ``make_plays`` starts from
+the ``RAW_COLUMNS`` defaults, and each override dict changes only the fields a
+test examines.
 """
 
 from __future__ import annotations

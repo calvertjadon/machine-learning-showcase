@@ -1,19 +1,19 @@
-"""Command line interface for the NFL play-type showcase.
+"""Command line interface for the NFL play-type study.
 
 Commands
 --------
 ``train``
-    Clean exact duplicate rows (optionally excluding whole ambiguous games),
-    fit the four estimators on a chronological split, and save the bundle plus
-    a provenance record.
+    Clean exact duplicate rows, drop whole ambiguous games when asked, fit the
+    four estimators on a chronological split, and save the bundle with a
+    provenance record.
 ``evaluate``
-    Score a saved bundle on its own recorded holdout and write aggregate
-    reports (JSON metrics plus original figures).
+    Score a saved bundle on its own recorded holdout and write the JSON
+    metrics plus original figures.
 ``predict``
     Score explicit pre-play contexts with the saved random forest and print
     JSON labels with probabilities.
 ``smoke``
-    Run the deterministic fictional-data mechanics check from ``smoke.py``.
+    Run the workflow check on fictional data from ``smoke.py``.
 
 Every command is a plain function taking an ``argparse.Namespace`` and
 returning an exit status, so the module stays importable and testable without
@@ -62,7 +62,7 @@ DEFAULT_SMOKE_DIR = "artifacts/smoke"
 
 
 def _read_raw_csv(path: Path) -> pd.DataFrame:
-    """Read only the minimal raw context columns (the CSV carries a UTF-8 BOM)."""
+    """Read the minimal raw context columns from a CSV that carries a UTF-8 BOM."""
     if not path.is_file():
         raise FileNotFoundError(f"raw play-by-play csv not found: {path}")
     return pd.read_csv(
@@ -74,7 +74,7 @@ def _read_raw_csv(path: Path) -> pd.DataFrame:
 
 
 def _sha256_of_file(path: Path) -> str:
-    """Full sha256 of a file, streamed so the raw CSV is never loaded twice."""
+    """Compute the file's SHA-256 in chunks without loading the whole CSV."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -83,7 +83,7 @@ def _sha256_of_file(path: Path) -> str:
 
 
 def _split_summary(frame: pd.DataFrame, prefix: str) -> dict[str, Any]:
-    """Flat provenance summary for one side of the chronological split."""
+    """Summarize the rows, games, dates, and labels in one split partition."""
     dates = pd.to_datetime(frame["game_date"])
     counts = frame["play_type"].value_counts()
     return {
@@ -96,7 +96,7 @@ def _split_summary(frame: pd.DataFrame, prefix: str) -> dict[str, Any]:
 
 
 def _print_cleaning_audit(summary: dict[str, Any]) -> None:
-    """Short audit line for the exact-duplicate and ambiguous-game decisions."""
+    """Print the counts of removed duplicates and excluded ambiguous games."""
     print(
         "cleaning: "
         f"raw_rows={summary['raw_rows']} "
@@ -116,8 +116,9 @@ def _nan_for_null(value: Any) -> Any:
 def _records_to_frame(records: list[dict[str, Any]]) -> pd.DataFrame:
     """Build a raw ``FEATURE_COLUMNS`` frame, one row per input record.
 
-    Nulls fall through to the bundle's train-fitted imputers; this module never
-    substitutes a value of its own for missing pre-play context.
+    Missing values are left to the bundle's imputers, which were fitted on the
+    training split.  This module never substitutes a value of its own for
+    missing pre-play context.
     """
     rows = []
     for record in records:
@@ -161,7 +162,7 @@ def _check_reconstructed_split(metadata: dict[str, Any], prefix: str, frame: pd.
 
 
 def _print_metrics_table(metrics: dict[str, Any]) -> None:
-    """Compact measured table so a run is readable without opening the JSON."""
+    """Print a table of model accuracy and macro-F1."""
     width = max(len(name) for name in metrics)
     header = f"{'model':<{width}}  {'accuracy':>8}  {'macro_f1':>8}"
     print(header)
@@ -181,7 +182,7 @@ def _pyplot() -> Any:
 
 
 def _plot_comparison(metrics: dict[str, Any], path: Path) -> None:
-    """Grouped accuracy and macro-F1 bars for every evaluated model."""
+    """Plot grouped accuracy and macro-F1 bars for every evaluated model."""
     plt = _pyplot()
     names = list(metrics)
     accuracy = [metrics[name]["accuracy"] for name in names]
@@ -205,7 +206,7 @@ def _plot_comparison(metrics: dict[str, Any], path: Path) -> None:
 
 
 def _plot_confusion(metrics: dict[str, Any], path: Path) -> None:
-    """Holdout confusion matrix of the random forest in TARGET_LABELS order."""
+    """Plot the forest's holdout confusion matrix in TARGET_LABELS order."""
     plt = _pyplot()
     forest = metrics["random_forest"]
     labels = list(forest["labels"])
@@ -237,7 +238,7 @@ def _plot_confusion(metrics: dict[str, Any], path: Path) -> None:
 
 
 def _plot_per_class_f1(metrics: dict[str, Any], path: Path) -> None:
-    """Per-class holdout F1 bars, grouped by model, in TARGET_LABELS order."""
+    """Plot holdout F1 by model and class in TARGET_LABELS order."""
     plt = _pyplot()
     names = list(metrics)
     labels = list(next(iter(metrics.values()))["labels"])
@@ -260,7 +261,7 @@ def _plot_per_class_f1(metrics: dict[str, Any], path: Path) -> None:
 
 
 def _plot_forest_importance(models: dict[str, Any], path: Path) -> None:
-    """Top forest importances with an explicit impurity-importance caveat."""
+    """Plot the highest forest importances and note impurity-based bias."""
     plt = _pyplot()
     forest = models["random_forest"]
     steps = getattr(forest, "named_steps", {})
@@ -347,7 +348,7 @@ def run_train(args: argparse.Namespace) -> int:
 
 
 def run_evaluate(args: argparse.Namespace) -> int:
-    """Score the saved bundle on its own holdout, replaying its saved cleaning policy."""
+    """Score the saved bundle on its own holdout, applying the cleaning policy saved in it."""
     data_path = Path(args.data)
     model_path = Path(args.model)
     output_dir = Path(args.output_dir)
@@ -465,9 +466,7 @@ def run_smoke(args: argparse.Namespace) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nfl-showcase",
-        description=(
-            "Train, evaluate and apply explainable play-type models on a raw NFL play-by-play CSV."
-        ),
+        description=("Train, evaluate and apply play-type models on a raw NFL play-by-play CSV."),
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -498,9 +497,9 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help=(
-            "opt in to dropping every game whose (game_id, play_id) rows still carry "
-            "conflicting pre-play context after exact-duplicate removal; the default "
-            "rejects such a source with an actionable error"
+            "drop every game whose (game_id, play_id) rows still carry conflicting "
+            "pre-play context after exact-duplicate removal. Without this flag such "
+            "a source is rejected with an error that says what to do"
         ),
     )
     train.set_defaults(handler=run_train)

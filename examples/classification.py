@@ -1,27 +1,29 @@
-"""Classifiers on two very different datasets: tabular and toy text.
+"""Classifiers on two kinds of data: tabular features and toy text.
 
-This notebook-style script (percent-format cells, ``# %%``) runs two compact
-classification studies that share a measurement style, not a dataset.
+This notebook-style script uses percent-format cells, marked with ``# %%``, and
+runs two small classification studies. The studies share measurement code but
+not data.
 
-1. Breast cancer (tabular, bundled with scikit-learn): a k-nearest-neighbors
-   pipeline and a Gaussian naive Bayes pipeline, both wrapped around a
-   StandardScaler that is fitted on the training split only, compared on a
-   single stratified holdout. The neighbor count for KNN is chosen by 5-fold
-   stratified cross-validation on the training split, never on the holdout.
-2. Toy messages (text, written for this repository): a fictional and
-   deliberately tiny spam/ham corpus that demonstrates TF-IDF vectorization
-   with multinomial naive Bayes. The corpus is original teaching text, not a
-   real SMS dataset, and its scores measure pipeline mechanics on a handful of
-   sentences rather than real-world spam filtering.
+1. Breast cancer data. The dataset is tabular and bundled with scikit-learn,
+   and the script compares a k-nearest-neighbors pipeline with a Gaussian
+   naive Bayes pipeline on one stratified holdout. Both pipelines scale their
+   features with a StandardScaler fitted on the training split only. The
+   neighbor count for KNN comes from 5-fold stratified cross-validation on the
+   training split, never from the holdout.
+2. Toy messages. The corpus is fictional text written for this repository, an
+   intentionally tiny spam/ham set that shows how TF-IDF vectorization and
+   multinomial naive Bayes work on text. It is original teaching text, not a
+   real SMS dataset, so its scores describe the pipeline on a handful of
+   sentences, not real-world spam filtering.
 
-The two studies are never compared with each other. The JSON file written by
-this script is the source of truth for every metric quoted elsewhere in the
-repository, and no network access is required.
+The script never compares the two studies with each other. The JSON file it
+writes holds every metric quoted elsewhere in the repository, and the script
+needs no network access.
 
-Authorship: original fictional text and code created for this 2026 showcase
-refresh with AI assistance under Jadon Calvert's direction; not copied from the
-2024 coursework, and no course handouts, real messages or third-party datasets
-are reproduced here.
+Authorship: Jadon Calvert directed this original fictional text and code,
+written for the 2026 refresh of the project with AI assistance. Nothing comes
+from the 2024 coursework, and no course handouts, real messages or third-party
+datasets are reproduced here.
 
 Run with::
 
@@ -59,8 +61,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-# Figures are always written to PNG files, so pin a headless backend that
-# behaves identically in a terminal, in CI runs and in headless renders.
+# The script writes every figure to a PNG file and may run in a terminal, in
+# CI or on a machine without a display, so it selects the headless Agg backend.
 plt.switch_backend("Agg")
 
 DEFAULT_SEED = 42
@@ -241,7 +243,10 @@ def run_breast_cancer_study(seed: int) -> dict[str, Any]:
     gaussian_model.fit(x_train, y_train)
 
     return {
-        "source": "sklearn.datasets.load_breast_cancer (bundled, no download)",
+        "source": (
+            "sklearn.datasets.load_breast_cancer, bundled with scikit-learn, "
+            "so the script downloads nothing"
+        ),
         "n_samples": int(features.shape[0]),
         "n_features": int(features.shape[1]),
         "class_names": target_names,
@@ -265,10 +270,11 @@ def run_breast_cancer_study(seed: int) -> dict[str, Any]:
             target_names,
         ),
         "notes": (
-            "A single stratified split is reported; the scaler and KNN's k are "
-            "fitted on the training split only. These scores describe this "
-            "split, not the dataset as a whole, and GaussianNB is scale "
-            "invariant, so its scaler only keeps the pipeline convention."
+            "The script reports one stratified split and fits the scaler and "
+            "KNN's k on the training split only, so these scores describe that "
+            "split rather than the dataset as a whole. GaussianNB is scale "
+            "invariant, so its scaler changes no result and only matches the "
+            "structure of the KNN pipeline."
         ),
     }
 
@@ -323,9 +329,9 @@ def run_toy_text_study(seed: int) -> dict[str, Any]:
         n_jobs=1,
     )
 
-    # The token indicators reuse the training-only holdout model: no refit on
-    # the full toy corpus, so the descriptive vocabulary comes from the same
-    # training split as the reported holdout scores.
+    # The token indicators come from the same training-only fit that produced
+    # the holdout scores. The script never refits on the full toy corpus, so
+    # the vocabulary and the holdout scores share one training split.
     vocabulary = holdout_model.named_steps["tfidf"].get_feature_names_out()
     log_probabilities = holdout_model.named_steps["nb"].feature_log_prob_
     # MultinomialNB sorts classes, so index 0 is ham and index 1 is spam here.
@@ -336,8 +342,8 @@ def run_toy_text_study(seed: int) -> dict[str, Any]:
 
     return {
         "corpus": (
-            "Original fictional teaching messages written for this repository; "
-            "not a real SMS dataset and not a benchmark of any kind."
+            "These messages are original fictional teaching text written for "
+            "this repository, not a real SMS dataset and not a benchmark."
         ),
         "n_messages": len(TOY_MESSAGES),
         "class_counts": {
@@ -359,21 +365,24 @@ def run_toy_text_study(seed: int) -> dict[str, Any]:
             "macro_f1_per_fold": [float(value) for value in fold_scores],
             "macro_f1_mean": float(fold_scores.mean()),
             "macro_f1_std": float(fold_scores.std()),
-            "vocabulary_fit": "inside each fold through the pipeline (train-only)",
+            "vocabulary_fit": (
+                "each fold fits the vectorizer inside the pipeline, on that "
+                "fold's training rows only"
+            ),
         },
         "token_indicators": {
             "fit_on": (
-                "training split only (the same pipeline fit that produced the "
-                "holdout metrics; no full-corpus refit)"
+                "the training split only, from the same pipeline fit that "
+                "produced the holdout metrics, with no refit on the full corpus"
             ),
             "vocabulary_size": int(vocabulary.size),
             "most_spam_associated": most_spam,
             "most_ham_associated": most_ham,
         },
         "limitations": (
-            "About thirty fictional sentences; any high score reflects this toy "
-            "corpus, not real spam-filter quality, and the corpus is far too "
-            "small for generalization claims."
+            "The corpus holds about thirty fictional sentences. A high score "
+            "here describes this toy corpus, not real spam filtering, and the "
+            "corpus is far too small to support generalization claims."
         ),
     }
 
@@ -432,8 +441,8 @@ def plot_model_comparison(
         marker="o",
         capsize=3,
     )
-    axes[1].set_xlabel("k (number of neighbors)")
-    axes[1].set_ylabel("macro F1 (5-fold CV on train)")
+    axes[1].set_xlabel("number of neighbors, k")
+    axes[1].set_ylabel("macro F1, 5-fold CV on the training split")
     axes[1].set_title("KNN neighbor count selected on the training split")
     save_figure(fig, output_path)
 
@@ -444,7 +453,7 @@ def plot_toy_text(study: dict[str, Any], output_path: Path) -> None:
     matrix = np.asarray(study["holdout"]["confusion_matrix"])
     class_names = study["holdout"]["labels"]
     artist = axes[0].imshow(matrix, cmap="Purples")
-    axes[0].set_title("Toy corpus: stratified holdout")
+    axes[0].set_title("Stratified holdout on the toy corpus")
     axes[0].set_xlabel("predicted")
     axes[0].set_ylabel("true")
     axes[0].set_xticks(range(len(class_names)), class_names)
@@ -466,7 +475,7 @@ def plot_toy_text(study: dict[str, Any], output_path: Path) -> None:
     axes[1].set_xlabel("fold")
     axes[1].set_ylabel("macro F1")
     mean_score = study["cross_validation"]["macro_f1_mean"]
-    axes[1].set_title(f"5-fold CV on the toy corpus (mean {mean_score:.3f})")
+    axes[1].set_title(f"5-fold CV on the toy corpus, mean {mean_score:.3f}")
     save_figure(fig, output_path)
 
 
@@ -525,7 +534,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     plot_toy_text(toy_text, args.output_dir / "classification_toy_text.png")
 
-    print(f"== classification example (seed {args.seed}) ==")
+    print(f"== classification example, seed {args.seed} ==")
     print(f"breast cancer samples: {breast_cancer['n_samples']}")
     print(f"  holdout rows: {breast_cancer['holdout']['n_test']}")
     knn_accuracy = knn_metrics["accuracy"]
@@ -541,8 +550,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  holdout macro F1 {holdout_f1:.3f}")
     print(f"  5-fold CV macro F1 mean {toy_cv['macro_f1_mean']:.3f}")
     print(f"  fold scores {toy_cv['macro_f1_per_fold']}")
-    print(f"metrics -> {metrics_path}")
-    print(f"figures -> {args.output_dir}/classification_*.png")
+    print(f"metrics written to {metrics_path}")
+    print(f"figures written to {args.output_dir}/classification_*.png")
     return 0
 
 

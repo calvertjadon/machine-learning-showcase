@@ -1,20 +1,20 @@
-"""Causal feature engineering for the NFL play-call showcase.
+"""Causal feature engineering for the NFL play-call study.
 
 The raw play-by-play table mixes three kinds of columns: pre-snap game state,
 descriptors of the current play, and post-play outcomes.  :func:`prepare_plays`
-keeps only information that was honestly available *before* the snap of the
-play whose type is being predicted, derives previous-play context inside each
-game (never across game boundaries), and returns rows labelled with one of
+keeps only information that was available *before* the snap of the play whose
+type is being predicted.  It derives previous-play context within each game
+and never across game boundaries, and it returns rows labelled with one of
 :data:`TARGET_LABELS`.
 
-:func:`clean_raw_plays` is the explicit, auditable step that handles the
-repeated records and conflicting identifiers present in the published source:
-exact repeats are collapsed, and games whose identifiers disagree are dropped
-only when the caller opts in.  :func:`prepare_plays` keeps its strict
-duplicate rejection unchanged and is meant to run on cleaned rows.
+:func:`clean_raw_plays` handles the repeated records and conflicting
+identifiers in the published source and reports what it removed.  It collapses
+exact repeats, and it drops games whose identifiers disagree only when the
+caller opts in.  :func:`prepare_plays` keeps its strict duplicate rejection
+and expects cleaned rows.
 
-:func:`chronological_split` then carves a game-separated, future-season
-holdout out of the prepared frame.
+:func:`chronological_split` then splits the prepared frame into a training
+partition and a holdout of later seasons, keeping every game whole.
 
 Modelling rules enforced here:
 
@@ -22,15 +22,16 @@ Modelling rules enforced here:
   before any label filtering, so previous-play features are strictly causal;
 * ``shift`` is computed per ``game_id``; the first play of a game carries no
   previous-play context;
-* the previous play's outcome columns are allowed (``previous_yards_gained``),
-  the current play's outcome columns are never used;
+* the previous play's outcome columns, such as ``previous_yards_gained``, are
+  allowed; the current play's outcome columns are never used;
 * missing values are preserved: numeric gaps stay ``NaN`` and categorical
   gaps stay missing so that imputers can be fitted on the training split only;
 * only identifiers, the game date, the label, and :data:`FEATURE_COLUMNS`
   leave :func:`prepare_plays`.
 
-The columns read from the raw file are exactly :data:`RAW_COLUMNS`; the raw
-CSV is expected to be UTF-8 with a BOM (read it with ``encoding="utf-8-sig"``).
+The columns read from the raw file are exactly :data:`RAW_COLUMNS`.  The raw
+CSV is expected to be UTF-8 with a BOM, so read it with
+``encoding="utf-8-sig"``.
 """
 
 import numpy as np
@@ -104,7 +105,7 @@ TARGET_LABELS: list[str] = [
     "run",
 ]
 
-#: Identifier/label columns returned alongside the model features.
+#: Identifier and label columns returned alongside the model features.
 _CONTEXT_COLUMNS: tuple[str, ...] = ("game_id", "play_id", "game_date", "play_type")
 
 #: Franchise moves between the 2009-2018 seasons, normalized to the current
@@ -200,33 +201,33 @@ def clean_raw_plays(
     """Clean repeated and ambiguous raw rows before :func:`prepare_plays`.
 
     The published source file contains a small number of repeated records and a
-    few ``(game_id, play_id)`` identifiers whose selected context disagrees
-    (the same play number described with different pre-snap values inside one
-    game).  :func:`prepare_plays` deliberately rejects any shared identifier,
-    so a caller handling the real source must decide explicitly how to treat
-    those rows first; this function is that explicit, auditable step.
+    few ``(game_id, play_id)`` identifiers whose selected context disagrees.
+    One play number can be described with different pre-snap values inside one
+    game.  :func:`prepare_plays` rejects any shared identifier, so a caller
+    handling the real source must decide how to treat those rows first.  This
+    function makes that decision and reports what it did.
 
     Cleaning is defined only in the selected :data:`RAW_COLUMNS` schema:
 
     1. identifiers and dates are normalized and validated the same way
-       :func:`prepare_plays` validates them (missing columns, blank
+       :func:`prepare_plays` validates them; missing columns, blank
        identifiers, unparseable dates, and games with conflicting dates raise
-       ``ValueError``);
+       ``ValueError``;
     2. records that are identical across every selected column are repeated
        rows; all but the first occurrence are dropped;
     3. afterwards, any ``(game_id, play_id)`` shared by more than one row is
-       *ambiguous*: one identifier is described by different selected values
-       and the source alone cannot say which record is the pre-snap truth.  No
-       keep-last, ordering or averaging rule is invented.
+       *ambiguous*: one identifier is described by different selected values,
+       and the source alone cannot say which record holds the correct pre-snap
+       values.  The function invents no keep-last, ordering or averaging rule.
 
     Args:
         raw: Raw play-by-play frame containing at least :data:`RAW_COLUMNS`.
             Extra columns are ignored and are not part of the returned frame.
         exclude_ambiguous_games: When ``False`` (default) ambiguous identifiers
             raise ``ValueError``.  When ``True``, every row of every affected
-            game is dropped -- the whole game, not just the conflicting plays
-            -- so previous-play context and whole-game evaluation never cross
-            a partially removed game.
+            game is dropped, not only the conflicting plays, so previous-play
+            context and whole-game evaluation never cross a partially removed
+            game.
 
     Returns:
         ``(cleaned, summary)``.  ``cleaned`` contains exactly
@@ -234,16 +235,16 @@ def clean_raw_plays(
         first) and has a fresh ``RangeIndex``.  ``summary`` reports plain
         Python ``int`` counts:
 
-        * ``raw_rows`` -- rows in ``raw`` before any cleaning;
-        * ``exact_duplicate_rows_removed`` -- repeated records dropped;
-        * ``ambiguous_id_groups`` -- ``(game_id, play_id)`` groups that still
-          disagree after duplicate removal (``0`` means the source is
-          unambiguous);
-        * ``ambiguous_games_excluded`` -- distinct games dropped because the
-          caller opted in (``0`` when none);
-        * ``ambiguous_rows_removed`` -- rows dropped by that whole-game
+        * ``raw_rows``: rows in ``raw`` before any cleaning;
+        * ``exact_duplicate_rows_removed``: repeated records dropped;
+        * ``ambiguous_id_groups``: ``(game_id, play_id)`` groups that still
+          disagree after duplicate removal, where ``0`` means the source is
+          unambiguous;
+        * ``ambiguous_games_excluded``: distinct games dropped because the
+          caller opted in, ``0`` when none;
+        * ``ambiguous_rows_removed``: rows dropped by that whole-game
           exclusion, counted after duplicate removal;
-        * ``retained_rows`` -- rows returned in ``cleaned``.
+        * ``retained_rows``: rows returned in ``cleaned``.
 
         Excluded game identities are not reported in the summary.
 
@@ -281,8 +282,8 @@ def clean_raw_plays(
     deduplicated = plays.loc[~exact_repeats].reset_index(drop=True)
 
     # After exact duplicate removal, two rows can only share an identifier if
-    # they disagree on at least one selected value, which is exactly the
-    # ambiguous case the contract refuses to resolve silently.
+    # they disagree on at least one selected value.  That is the ambiguous
+    # case, and this function refuses to resolve it silently.
     identifier_sizes = deduplicated.groupby(["game_id", "play_id"], sort=False).size()
     ambiguous_groups = identifier_sizes[identifier_sizes > 1]
     ambiguous_id_groups = int(ambiguous_groups.size)
@@ -325,8 +326,8 @@ def clean_raw_plays(
 def prepare_plays(raw: pd.DataFrame) -> pd.DataFrame:
     """Build the causal, pre-snap feature frame from raw play-by-play rows.
 
-    ``(game_id, play_id)`` pairs must be unique; this strictness is unchanged
-    by design.  The published source file repeats some records and contains a
+    ``(game_id, play_id)`` pairs must be unique, and that strictness is
+    deliberate.  The published source file repeats some records and contains a
     few conflicting identifiers, so callers pass it through
     :func:`clean_raw_plays` first and prepare the cleaned frame.
 
@@ -335,9 +336,9 @@ def prepare_plays(raw: pd.DataFrame) -> pd.DataFrame:
             :data:`RAW_COLUMNS`.  Extra columns are ignored.
 
     Returns:
-        A new frame with one row per supported play (``play_type`` in
-        :data:`TARGET_LABELS`), ordered by ``(game_id, play_id)`` and
-        containing exactly ``game_id``, ``play_id``, ``game_date``,
+        A new frame with one row per supported play, where ``play_type`` is one
+        of :data:`TARGET_LABELS`.  Rows are ordered by ``(game_id, play_id)``
+        and contain exactly ``game_id``, ``play_id``, ``game_date``,
         ``play_type`` and :data:`FEATURE_COLUMNS`.
 
     Raises:
@@ -418,7 +419,8 @@ def prepare_plays(raw: pd.DataFrame) -> pd.DataFrame:
     plays["clock_running_proxy"] = clock_kept_running.fillna(False).astype("int8")
 
     # Filter to target labels only after the previous-play context has been
-    # derived from every original row (kickoffs, punts, no-plays, timeouts).
+    # derived from every original row, including kickoffs, punts, no-plays and
+    # timeouts.
     output_columns = [*_CONTEXT_COLUMNS, *FEATURE_COLUMNS]
     prepared = plays.loc[plays["play_type"].isin(TARGET_LABELS), output_columns]
     if prepared.empty:
@@ -431,10 +433,10 @@ def chronological_split(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Split a prepared frame into past and future partitions by game date.
 
-    Every game stays whole: the training partition contains only rows dated
-    strictly before ``holdout_start`` and the holdout partition only rows dated
-    on or after it.  The default cutoff yields future seasons as the holdout
-    for the 2009-2018 dataset.
+    Every game stays whole.  The training partition contains only rows dated
+    strictly before ``holdout_start``, and the holdout partition contains only
+    rows dated on or after it.  The default cutoff yields future seasons as the
+    holdout for the 2009-2018 dataset.
 
     Args:
         prepared: Frame produced by :func:`prepare_plays` (needs at least

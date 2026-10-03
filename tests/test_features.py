@@ -139,7 +139,8 @@ def test_clock_running_proxy_stays_zero_after_a_stopped_clock(stopped_prior):
 
     target_proxy = prepared.loc[prepared["play_id"] == 2, "clock_running_proxy"]
     assert target_proxy.tolist() == [0]
-    # Non-target predecessors (kickoff, no_play) must not survive preparation.
+    # Non-target predecessors such as kickoff and no_play must not survive
+    # preparation.
     assert set(prepared["play_type"]) <= set(TARGET_LABELS)
 
 
@@ -376,12 +377,13 @@ def test_clean_raw_plays_collapses_exact_repeats_without_a_self_predecessor():
         {"game_id": 1, "play_id": 3, "play_type": "run", "yards_gained": -1.0},
     )
 
-    # The strict preparation pipeline keeps rejecting the uncleaned source ...
+    # Strict preparation still rejects the uncleaned source, because the
+    # duplicated (game_id, play_id) pairs are an error.
     with pytest.raises(ValueError):
         prepare_plays(raw)
 
-    # ... while cleaning (no flags needed: nothing is contradictory) collapses
-    # the non-adjacent whole-row repeats.
+    # Cleaning collapses the non-adjacent whole-row repeats without any flags,
+    # because the duplicate rows do not contradict each other.
     cleaned, summary = clean_raw_plays(raw)
 
     assert summary["raw_rows"] == 7
@@ -403,8 +405,8 @@ def test_clean_raw_plays_collapses_exact_repeats_without_a_self_predecessor():
     game_two = games[2]
     assert list(game_one["play_id"]) == [1, 2, 3]
     assert list(game_two["play_id"]) == [1, 2]
-    # Each surviving play must see the play before it -- never a removed copy
-    # of itself -- as its previous event.
+    # Each surviving play must see the preceding surviving play as its
+    # previous event, never a removed copy of itself.
     assert game_one.loc[1, "previous_play_type"] == "run"
     assert game_one.loc[1, "previous_yards_gained"] == 3.0
     assert game_one.loc[2, "previous_play_type"] == "pass"

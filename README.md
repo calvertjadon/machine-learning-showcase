@@ -1,51 +1,51 @@
-# NFL play-type prediction — a leakage-conscious ML showcase
+# Predicting NFL play types
 
-An original, reproducible machine-learning showcase that predicts the type of
-play an NFL offense will call, using only information observable **before the
-snap**.
-The 2026 package reimplements the problem of a 2024 personal coursework
-project as new code — developed with AI assistance under the author's
-direction — and fixes the coursework's methodological weaknesses (row-level
-leakage, previous-play values shifted across game boundaries, post-play inputs)
-instead of reproducing them. It is not a copy of the coursework, and it is not
-a production product.
+This project classifies NFL play types with scikit-learn using information
+available before the snap. It revisits a graduate course project from 2024
+with new code and new measurements.
+
+Jadon Calvert directed the 2026 implementation and documentation with AI
+assistance. The new code corrects the original experiment's row-level leakage,
+previous-play shifts across game boundaries, and post-play inputs. It does not
+copy the coursework files and is not a production system.
 
 ## Objective
 
-From pre-play context alone — down, distance, field position, clock, timeouts,
-score, teams, and the immediately preceding play of the same game — classify
-the play as one of six labels: `field_goal`, `pass`, `punt`, `qb_kneel`,
-`qb_spike`, `run`. Evaluation is a **game-separated chronological holdout**:
-models train on 2009–2016 games and are scored once on the 2017–2018 games, so
-the numbers measure generalization to later seasons rather than memorization
-of randomly split rows. All imputation and scaling are fitted on training rows
-only, and current-play post-play outcomes are excluded. Previous-play yardage,
-play type, and clock context are derived within the same game and are known
-before the current snap.
+The target is one of six recorded play types: `field_goal`, `pass`, `punt`,
+`qb_kneel`, `qb_spike`, or `run`. Inputs include down, distance, field position,
+clock, timeouts, score, teams, and the preceding play in the same game.
 
-## Measured results (real run)
+The models train on the 2009 through 2016 seasons and are evaluated once on
+the 2017 and 2018 seasons. The split keeps games intact and measures performance
+on later seasons. Imputation and scaling learn from training rows only.
+Previous-play yardage, play type, and clock context come from the same game.
+The models do not use the current play's outcome.
 
-Holdout: 66,965 plays from 480 games (2017-09-07 → 2018-12-17); training:
-288,530 plays from 2,045 games (2009-09-10 → 2017-01-01), cutoff 2017-09-01.
-Source values are in [`results/metrics.json`](results/metrics.json); values are
-shown rounded to four decimals.
+## Measured results
+
+Training used 288,530 plays from 2,045 games dated 2009-09-10 through 2017-01-01.
+The holdout contains 66,965 plays from 480 games dated 2017-09-07 through
+2018-12-17. The date cutoff is 2017-09-01.
+
+The table rounds values from [`results/metrics.json`](results/metrics.json)
+to four decimal places.
 
 | Model | Accuracy | Macro-F1 |
 | --- | ---: | ---: |
-| `majority` (class-prior baseline) | 0.5255 | 0.1148 |
-| `down_distance` (coaching-shorthand baseline) | 0.6069 | 0.3297 |
+| `majority`, class-prior baseline | 0.5255 | 0.1148 |
+| `down_distance`, down/distance baseline | 0.6069 | 0.3297 |
 | `logistic_regression` | 0.6741 | **0.6734** |
 | `random_forest` | **0.7093** | 0.6663 |
 
-The baselines show why accuracy alone is misleading here: `pass` is 52.5% of
-the holdout, so the majority baseline gets 0.5255 accuracy while scoring zero
-F1 on five of six classes (macro-F1 0.1148). The random forest has the
-**highest accuracy**, but logistic regression has the **higher macro-F1** —
-neither dominates every class, and there is no universal best model in this
-run. The clearest difference is the rarest class: the forest recovers only
-**2 of the 121** holdout `qb_spike` plays (recall 0.0165, precision 1.0, F1
-0.0325), while logistic regression recovers 34 of 121 (recall 0.2810, F1
-0.3134). No calibration or threshold tuning was applied.
+Passes account for 52.5% of the holdout. Predicting `pass` for every row gives
+the majority baseline 0.5255 accuracy, but zero F1 on the other five classes
+and 0.1148 macro-F1.
+
+The random forest has higher accuracy than logistic regression, but lower
+macro-F1. It identifies 2 of 121 `qb_spike` plays, with recall 0.0165,
+precision 1.0, and F1 0.0325. Logistic regression identifies 34 of 121, with
+recall 0.2810 and F1 0.3134. Neither model leads on every class.
+The experiment uses no probability calibration or threshold tuning.
 
 ![Accuracy and macro-F1 by model](results/comparison.png)
 
@@ -53,13 +53,14 @@ run. The clearest difference is the rarest class: the forest recovers only
 
 ![Random forest holdout confusion matrix](results/random_forest_confusion.png)
 
-Run context: seed 42, 200 trees, max depth 18, min leaf 5, 2 jobs. Full
-protocol, per-class supports, and limitations — including uncalibrated
-probabilities — are in [`docs/experiment.md`](docs/experiment.md).
+The run uses seed 42, 200 trees, a maximum depth of 18, a minimum leaf size
+of 5, and 2 jobs. See [`docs/experiment.md`](docs/experiment.md) for the
+protocol, per-class support, and limitations, including uncalibrated
+probabilities.
 
-## Quickstart and reproducible gates
+## Setup and checks
 
-Requires Python 3.12 and [uv](https://github.com/astral-sh/uv).
+Install Python 3.12 and [uv](https://github.com/astral-sh/uv).
 
 ```bash
 uv sync --locked
@@ -69,9 +70,9 @@ uv run pytest
 uv run nfl-showcase smoke
 ```
 
-`pytest` runs 59 tests on original fictional fixtures; `smoke` runs a
-deterministic mechanics check on generated fictional play data (no raw dataset
-needed) and makes no performance claim.
+`pytest` runs 59 tests on fictional fixtures. `smoke` checks the complete
+workflow with generated fictional plays, without the NFL dataset.
+Its scores do not measure performance on real NFL data.
 
 The three self-contained examples are separate from the NFL package and run on
 bundled or generated data:
@@ -82,58 +83,57 @@ uv run python examples/classification.py --output-dir results/examples
 uv run python examples/clustering.py --output-dir results/examples
 ```
 
-## Real data: acquisition, training, evaluation
+## Acquiring data and running the experiment
 
-The NFL data is **not** distributed with this repository. Obtain the public
-*NFL Play by Play 2009-2018 (v5)* CSV from
-[Kaggle](https://www.kaggle.com/datasets/maxhorowitz/nflplaybyplay2009to2016)
-and verify it against the documented size and SHA-256 — full instructions,
-rights discussion, and the exact file facts are in
-[`docs/data.md`](docs/data.md). The commands below assume the extracted CSV is
-kept at `data/NFL Play by Play 2009-2018 (v5).csv` (`data/` is git-ignored);
-adjust the path if you store it elsewhere.
+This repository does not distribute the NFL dataset. Download
+*NFL Play by Play 2009-2018 (v5)* from
+[Kaggle](https://www.kaggle.com/datasets/maxhorowitz/nflplaybyplay2009to2016).
+Check its size and SHA-256 against [`docs/data.md`](docs/data.md), which also
+documents acquisition and data rights.
+
+The commands below use `data/NFL Play by Play 2009-2018 (v5).csv`.
+Git ignores `data/`. Change the path if you keep the CSV elsewhere.
 
 ```bash
-# Fit and validate the four models; writes artifacts/training.json and a local bundle.
+# Fit the four models and save the bundle and artifacts/training.json.
 uv run nfl-showcase train \
   --data "data/NFL Play by Play 2009-2018 (v5).csv" \
   --exclude-ambiguous-games \
   --output-dir artifacts --holdout-start 2017-09-01 \
   --seed 42 --trees 200 --jobs 2
 
-# Score the saved bundle on its own hash-matched holdout; writes results/metrics.json + figures.
+# Evaluate the saved bundle on its recorded holdout and write metrics and figures.
 uv run nfl-showcase evaluate \
   --data "data/NFL Play by Play 2009-2018 (v5).csv" \
   --model artifacts/models.joblib \
   --output-dir results
 ```
 
-`--exclude-ambiguous-games` is required for this release: after collapsing
-2,393 exact-duplicate rows, 22 conflicting play identifiers remain in one
-game, and the explicit cleaning step drops that whole game (268 rows) rather
-than guessing; 446,710 of 449,371 raw rows are retained. Without the flag,
-`train` rejects the source with an actionable error. `evaluate` refuses a CSV
-whose SHA-256 does not match the hash recorded at training time.
+This dataset requires `--exclude-ambiguous-games`. Cleaning removes 2,393
+exact duplicates, then finds 22 conflicting play identifiers in one game.
+The flag excludes all 268 rows of that game, leaving 446,710 of 449,371
+raw rows. Without it, `train` rejects the conflicting records.
+`evaluate` rejects a CSV whose SHA-256 differs from the training file.
 
-## Inference with honest pre-play context
+## Predicting from pre-play context
 
-`predict` scores explicit hypothetical contexts with the saved random forest
-and prints labels with probabilities:
+`predict` uses the saved random forest to score hypothetical contexts.
+It prints labels and probabilities:
 
 ```bash
 uv run nfl-showcase predict --model artifacts/models.joblib --input examples/pre_play_context.json
 ```
 
-[`examples/pre_play_context.json`](examples/pre_play_context.json) is an
-original, internally consistent **hypothetical** context — Miami trailing by 3
-with the ball, 2nd-and-4 at the Buffalo 38, 5:00 left in the fourth quarter,
-after a 6-yard run that kept the clock running. It contains all 16 required
-feature columns and is not a row from the dataset. There is deliberately **no
-mean-fill fallback for missing game context**: the CLI never substitutes a
-value of its own, so all 16 values must be supplied (JSON `null` only forwards
-a value to the training-fitted imputer, which is not a substitute for honest
-context). There is also no hosted or interactive prediction widget and no
-obsolete demo code in this repository; inference is batch CLI only.
+[`examples/pre_play_context.json`](examples/pre_play_context.json) describes
+a hypothetical play. Miami has the ball and trails Buffalo by 3. It is
+2nd-and-4 at the Buffalo 38 with 5:00 left in the fourth quarter, after a
+6-yard run that kept the clock running. The file contains all 16 required
+inputs and is not a dataset row.
+
+Supply every input column. The CLI does not invent missing game context.
+JSON `null` passes a missing value to the imputer fitted during training.
+Imputation does not recover the actual context of a game.
+Prediction runs through the batch CLI, not a hosted or interactive widget.
 
 ## Repository layout
 
@@ -147,39 +147,35 @@ obsolete demo code in this repository; inference is batch CLI only.
 | [`docs/provenance.md`](docs/provenance.md) | Authorship, rights, third-party licenses, data rights detail. |
 | [`examples/`](examples/) | Three documented examples plus the sample inference context; see [`examples/README.md`](examples/README.md). |
 | [`tests/`](tests/) | Original test suite on fictional fixtures. |
-| [`results/`](results/) | Aggregate metrics JSON and generated figures (published); [`results/examples/`](results/examples/) holds example outputs. |
+| [`results/`](results/) | Published aggregate metrics and figures. [`results/examples/`](results/examples/) contains example outputs. |
 | [`LICENSE`](LICENSE) | MIT, scoped to this repository's original work. |
 
 ### Static report
 
-The report is a read-only static page over the published aggregate results —
-not a prediction service. Serve it from the repository root so its relative
-`results/` fetches resolve, then open the `docs/` path:
+The static report reads the published metrics and figures. It does not make
+predictions. Serve it from the repository root so the relative paths to
+`results/` work, then open `docs/`:
 
 ```bash
 uv run python -m http.server 8000 --bind 127.0.0.1
-# open http://127.0.0.1:8000/docs/
+# Open http://127.0.0.1:8000/docs/ in your browser.
 ```
 
 ## Provenance, rights, and license
 
-- **Original work only.** The MIT [`LICENSE`](LICENSE) covers the code, tests,
-  documentation, examples, and aggregate results created for this repository.
-  No instructor material, 2024 notebooks, reports, photos, or old model files
-  are included.
-- **AI-assisted refresh.** The 2026 implementation and documentation were
-  developed with AI assistance under the author's direction; this project does
-  not claim that every new line or interface was personally hand-authored. The
-  underlying 2024 project is the author's own coursework; the verified 2026
-  results are new.
-- **No data redistribution.** The raw NFL dataset, model bundles, and
-  row-level extracts are never published. Kaggle's metadata lists the dataset
-  license as `Unknown`; upstream rights are unresolved and this project claims
-  none — see [`docs/provenance.md`](docs/provenance.md).
-- **Historical numbers are narrative only.** Any 2024 figures (for example the
-  reported micro-F1 around 0.75–0.77) come from a different, unsafe protocol
-  and are **not comparable** with the results above; see
-  [`docs/experiment.md`](docs/experiment.md#historical-2024-comparison-explicitly-not-comparable).
+The MIT [`LICENSE`](LICENSE) covers this repository's original code, tests,
+documentation, examples, and aggregate results. The repository does not include
+instructor material, 2024 notebooks or reports, photographs, or old models.
+The 2026 work used AI assistance under Jadon Calvert's direction. It does not
+claim that he wrote every line without assistance.
 
-NFL and team names are used nominatively to describe the public dataset. No
-NFL affiliation or endorsement is implied.
+Raw NFL data, model bundles, and row-level extracts remain local. Kaggle lists
+the dataset license as `Unknown`. Upstream rights are unresolved, and this
+project claims none. See [`docs/provenance.md`](docs/provenance.md).
+
+The reported 2024 micro-F1 of about 0.75 to 0.77 comes from a different protocol
+with unresolved leakage. It is not comparable with the current results.
+See the [historical comparison](docs/experiment.md#historical-2024-comparison-explicitly-not-comparable).
+
+NFL and team names identify the dataset's contents. This project has no
+NFL affiliation or endorsement.

@@ -13,11 +13,11 @@ dist/
 .mypy_cache/
 .ipynb_checkpoints/
 
-# Raw data is never committed or published (see docs/data.md)
+# Keep raw data out of Git. See docs/data.md.
 data/
 *.csv
 
-# Local model bundles and run artifacts stay local; generated model files are never published
+# Keep model bundles and run artifacts local.
 artifacts/
 *.joblib
 *.pkl
@@ -27,6 +27,6 @@ artifacts/
 .env
 .env.*
 
-# Editor and OS noise
+# Editor and operating system files
 .DS_Store
 Thumbs.db

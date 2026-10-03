@@ -1,4 +1,6 @@
-"""Fitted estimators, evaluation and bundle persistence for the showcase.
+"""Fitted estimators, evaluation and bundle persistence for the NFL study.
+
+The models predict NFL play types from pre-snap context.
 
 Public interface
 ----------------
@@ -13,17 +15,17 @@ Public interface
 ``save_bundle(models, path, metadata)`` / ``load_bundle(path)``
     Joblib persistence of complete fitted pipelines plus provenance metadata.
 
-Every learned transform (median imputation and standard scaling for numeric
-features, most-frequent imputation and one-hot encoding for categorical
-features) lives inside the estimators, is fitted only on the training frame
-and therefore travels with a saved bundle.  Categorical columns may arrive as
-object columns with ``numpy.nan`` gaps (what ``prepare_plays`` produces) or as
-pandas extension strings with ``pd.NA``; the categorical pipeline normalizes
-the latter to ``numpy.nan`` before imputation, which scikit-learn 1.5
-imputers require.  Saved bundles are trusted local artifacts: loading one
-unpickles Python objects, so only load bundles this package produced.  A
-bundle written by a different scikit-learn version may fail to load or behave
-differently because pickles embed version-sensitive internals.
+Every learned transform lives inside the estimators and is fitted only on the
+training frame, so it travels with a saved bundle.  Numeric features use median
+imputation and standard scaling; categorical features use most-frequent
+imputation and one-hot encoding.  Categorical columns may arrive as object
+columns with ``numpy.nan`` gaps, which is what ``prepare_plays`` produces, or
+as pandas extension strings with ``pd.NA``.  The categorical pipeline
+normalizes ``pd.NA`` to ``numpy.nan`` before imputation, which is what
+scikit-learn 1.5 imputers require.  Saved bundles are trusted local artifacts:
+loading one unpickles Python objects, so only load bundles this package
+produced.  A bundle written by a different scikit-learn version may fail to
+load or behave differently because pickles embed version-sensitive internals.
 """
 
 from __future__ import annotations
@@ -83,7 +85,7 @@ def _require_frame(frame: pd.DataFrame, required: Sequence[str], what: str) -> p
 
 
 def _modal_label(counts: Counter) -> str:
-    """Most frequent label; ties break toward the alphabetically first label."""
+    """Return the most frequent label, breaking ties in alphabetical order."""
     if not counts:
         raise ValueError("cannot pick a modal label from an empty collection")
     best = max(counts.values())
@@ -106,20 +108,20 @@ def _jsonable(value: Any) -> Any:
 
 
 def _macro_f1_score(truth, predictions, labels: Sequence[str]) -> float:
-    """Macro F1 over explicit labels, scoring unseen classes as zero."""
+    """Compute macro-F1 over the given labels, assigning absent classes zero F1."""
     return float(f1_score(truth, predictions, labels=labels, average="macro", zero_division=0))
 
 
 class DownDistanceBaseline(ClassifierMixin, BaseEstimator):
-    """Modal play type per (down, yards-to-go bucket) with a prior fallback.
+    """Predict the modal play type for each down and yards-to-go bucket.
 
     Buckets follow the usual coaching shorthand: ``<=2``, ``<=5``, ``<=10`` and
     ``>10`` yards to go.  Training learns the play-type distribution of every
     observed ``(down, bucket)`` cell; :meth:`predict` returns that cell's modal
     play type and :meth:`predict_proba` returns its empirical training
-    distribution.  Rows whose down or distance is missing, and cell/down
-    combinations never seen in training, fall back to the training set's
-    overall label distribution.  The estimator consumes the raw
+    distribution.  Rows with a missing down or distance, and rows in a cell
+    that training never observed, fall back to the training set's overall label
+    distribution.  The estimator consumes the raw
     ``FEATURE_COLUMNS`` frame and reads only ``down`` and ``ydstogo``; no
     outcome-based rules are involved.
     """
@@ -161,11 +163,11 @@ class DownDistanceBaseline(ClassifierMixin, BaseEstimator):
         return self.classes_[np.argmax(self.predict_proba(X), axis=1)]
 
     def predict_proba(self, X):
-        """Empirical training label distribution of each row's cell.
+        """Return the training label distribution for each row's cell.
 
-        Cells unseen in training (or rows missing down/distance) use the
-        training set's overall label distribution, so the rows still sum to 1
-        instead of inventing a value.
+        Cells unseen in training use the training set's overall label
+        distribution, and rows with a missing down or distance do the same.
+        Each probability row sums to 1.
         """
         check_is_fitted(self, ["classes_", "table_", "prior_"])
         frame = _require_frame(
@@ -206,7 +208,7 @@ class DownDistanceBaseline(ClassifierMixin, BaseEstimator):
 
 
 def _numeric_transformer() -> Pipeline:
-    """Median imputation then standard scaling, fitted on training rows only."""
+    """Build a pipeline for median imputation and standard scaling."""
     return Pipeline(
         [
             ("imputer", SimpleImputer(strategy="median")),
@@ -216,11 +218,11 @@ def _numeric_transformer() -> Pipeline:
 
 
 def _as_object_frame(values) -> pd.DataFrame:
-    """Object-dtype frame with ``numpy.nan`` marking missing values.
+    """Return an object-dtype frame with ``numpy.nan`` for missing values.
 
-    Categorical columns produced by ``prepare_plays`` already satisfy this
-    (object dtype, ``numpy.nan`` gaps); pandas extension string columns use
-    ``pd.NA``, which scikit-learn 1.5 imputers cannot mask.  Normalizing to
+    Categorical columns produced by ``prepare_plays`` already use object dtype
+    with ``numpy.nan`` gaps.  Pandas extension string columns use ``pd.NA``,
+    which scikit-learn 1.5 imputers cannot mask.  Normalizing to
     ``numpy.nan`` keeps the same missing semantics in a representation the
     imputers support, so the pipelines accept either producer dtype.
     """
@@ -229,7 +231,7 @@ def _as_object_frame(values) -> pd.DataFrame:
 
 
 def _categorical_transformer() -> Pipeline:
-    """Most-frequent imputation then one-hot encoding that ignores unknowns."""
+    """Build an imputation and one-hot encoding pipeline that ignores unknown categories."""
     return Pipeline(
         [
             (
@@ -247,7 +249,7 @@ def _categorical_transformer() -> Pipeline:
 
 
 def _preprocessor() -> ColumnTransformer:
-    """Raw ``FEATURE_COLUMNS`` frame to numeric design matrix, train-fitted."""
+    """Build a transform that imputes, scales, and encodes raw features."""
     return ColumnTransformer(
         [
             ("numeric", _numeric_transformer(), list(NUMERIC_FEATURES)),
@@ -259,14 +261,14 @@ def _preprocessor() -> ColumnTransformer:
 
 
 def build_models(seed: int = 42, trees: int = 200, jobs: int = 2) -> dict[str, Any]:
-    """Return the four unfitted estimators used by the showcase.
+    """Return the four unfitted estimators used by the study.
 
     ``majority`` predicts the most frequent play type and ``down_distance``
     predicts the modal play type of its down and yards-to-go bucket.  The two
-    pipelines fit median/std numeric and most-frequent/one-hot categorical
-    transforms on the training frame only.  The forest is bounded
-    (``max_depth=18``, ``min_samples_leaf=5``) and seeded; no hyperparameter
-    search runs here.
+    pipelines learn numeric medians and scaling from the training frame.
+    They also learn categorical modes and one-hot encoding from those rows.
+    The forest uses ``max_depth=18``, ``min_samples_leaf=5``, and the given seed.
+    This function does not run a hyperparameter search.
     """
     if trees < 1:
         raise ValueError("trees must be at least 1")
@@ -305,7 +307,7 @@ def build_models(seed: int = 42, trees: int = 200, jobs: int = 2) -> dict[str, A
 def fit_models(
     train: pd.DataFrame, seed: int = 42, trees: int = 200, jobs: int = 2
 ) -> dict[str, Any]:
-    """Fit the four showcase estimators on ``train`` and return them.
+    """Fit the four estimators from :func:`build_models` on ``train`` and return them.
 
     ``train`` is a prepared frame carrying ``FEATURE_COLUMNS`` and the
     ``play_type`` label column; learned transforms see only these rows.  Labels
@@ -332,9 +334,10 @@ def fit_models(
 def evaluate_models(models: Mapping[str, Any], test: pd.DataFrame) -> dict[str, dict[str, Any]]:
     """Score every model against ``test`` with explicit ``TARGET_LABELS``.
 
-    Ground truth comes first and labels are fixed to ``TARGET_LABELS`` (ground
-    truth order), so rare classes keep their rows in the report even when a
-    model never predicts them.  ``zero_division=0`` keeps every metric finite.
+    Ground truth comes first and labels are fixed to ``TARGET_LABELS`` in
+    ground-truth order, so rare classes keep their rows in the report even when
+    a model never predicts them.  ``zero_division=0`` keeps every metric
+    finite.
     """
     frame = _require_frame(test, [*FEATURE_COLUMNS, TARGET_COLUMN], "test frame")
     if not models:

@@ -1,9 +1,9 @@
-"""Deterministic mechanics smoke run for the public pipeline.
+"""Check the full model workflow with fictional play-by-play data.
 
-The fixture in this module is original fictional play-by-play data authored for this
-repository. It exercises the full public pipeline (prepare -> split -> fit -> save/load
--> evaluate) without any real NFL data. Metrics emitted here describe pipeline wiring
-only; they are explicitly not performance claims about real data.
+The fixture contains no real NFL rows. The check prepares features, splits
+the data, fits the models, and saves and loads their pipelines.
+It then evaluates the models and checks their predictions.
+The scores measure this fictional fixture, not performance on real NFL data.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ SMOKE_REPORT_NAME = "smoke_report.json"
 
 
 class _Play(NamedTuple):
-    """One scripted fictional play: all values are authored, none sampled."""
+    """One scripted fictional play.  Every value is authored rather than sampled."""
 
     play_type: str
     qtr: int
@@ -48,8 +48,9 @@ class _Play(NamedTuple):
     timeout: int = 0
 
 
-# (game_id, game_date, home_team, away_team): three games before the documented
-# holdout cutoff and three after it, so the split always has both sides.
+# Each _GAMES entry is (game_id, game_date, home_team, away_team).  Three games
+# fall before the documented holdout cutoff and three after it, so the split
+# always has both sides.
 _GAMES: tuple[tuple[int, str, str, str], ...] = (
     (2016091101, "2016-09-11", "NE", "BUF"),
     (2016091801, "2016-09-18", "KC", "DEN"),
@@ -59,8 +60,9 @@ _GAMES: tuple[tuple[int, str, str, str], ...] = (
     (2017110501, "2017-11-05", "NO", "ATL"),
 )
 
-# One scripted game with 33 plays covering all six target labels plus filtered
-# non-target rows (kickoffs, timeouts, penalties) that still provide context.
+# One scripted game with 33 plays covering all six target labels, plus
+# non-target rows such as kickoffs, timeouts and penalties that are filtered
+# out but still provide context.
 _SCRIPT: tuple[_Play, ...] = (
     _Play("kickoff", 1, 900, None, None, 60, "kickoff 60 yards"),
     _Play("pass", 1, 880, 1, 10, 8, "short pass complete"),
@@ -99,7 +101,7 @@ _SCRIPT: tuple[_Play, ...] = (
 
 
 def fictional_plays() -> pd.DataFrame:
-    """Return the deterministic fictional raw play frame (no NFL rows)."""
+    """Return the deterministic fictional raw play frame, which contains no NFL rows."""
     rows: list[dict[str, Any]] = []
     for game_index, (game_id, game_date, home_team, away_team) in enumerate(_GAMES):
         clock_shift = (game_index * 5) % 25
@@ -136,10 +138,10 @@ def fictional_plays() -> pd.DataFrame:
 
 
 def run_smoke(output_dir: str | Path = "artifacts/smoke") -> dict[str, Any]:
-    """Run the full pipeline on the fictional fixture and write a mechanics report.
+    """Run the full workflow on fictional plays and write a check report.
 
-    Returns the report dict and writes ``smoke_report.json`` plus ``smoke_models.joblib``
-    into ``output_dir``. Raises RuntimeError if any mechanics invariant fails.
+    Return the report and write ``smoke_report.json`` and ``smoke_models.joblib``
+    into ``output_dir``. Raise RuntimeError if a workflow check fails.
     """
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -152,7 +154,7 @@ def run_smoke(output_dir: str | Path = "artifacts/smoke") -> dict[str, Any]:
     train_games = set(train["game_id"])
     test_games = set(test["game_id"])
     metadata: dict[str, Any] = {
-        "purpose": "mechanics smoke test on a deterministic fictional fixture",
+        "purpose": "workflow check with deterministic fictional plays",
         "seed": SMOKE_SEED,
         "trees": SMOKE_TREES,
         "jobs": SMOKE_JOBS,
@@ -210,11 +212,11 @@ def run_smoke(output_dir: str | Path = "artifacts/smoke") -> dict[str, Any]:
     report: dict[str, Any] = {
         "mechanics_only": True,
         "note": (
-            "Mechanics-only smoke test on a deterministic fictional fixture; "
-            "the metrics below verify pipeline wiring and are not performance claims."
+            "Workflow check with deterministic fictional plays. "
+            "These scores do not measure performance on real NFL data."
         ),
         "fixture": {
-            "description": "deterministic original fictional play-by-play; no NFL rows copied",
+            "description": "deterministic original fictional play-by-play data, no NFL rows copied",
             "raw_rows": int(len(raw)),
             "prepared_rows": int(len(prepared)),
             "games": int(raw["game_id"].nunique()),
@@ -247,18 +249,18 @@ def run_smoke(output_dir: str | Path = "artifacts/smoke") -> dict[str, Any]:
 def _print_summary(report: dict[str, Any]) -> None:
     fixture = report["fixture"]
     split = report["split"]
-    print("smoke: fictional-fixture mechanics pipeline passed")
+    print("The workflow checks passed on fictional plays.")
     print(
-        f"  fixture: {fixture['raw_rows']} raw rows -> {fixture['prepared_rows']} prepared rows "
-        f"across {fixture['games']} games"
+        f"  Prepared {fixture['prepared_rows']} rows from {fixture['raw_rows']} raw rows "
+        f"across {fixture['games']} games."
     )
     print(
-        f"  split: {split['train_rows']} train rows / {split['test_rows']} test rows, "
-        "games disjoint"
+        f"  The split has {split['train_rows']} training rows and {split['test_rows']} test rows. "
+        "No game appears in both partitions."
     )
-    print("  save/load: labels and probabilities match for every model")
+    print("  Saving and loading preserves labels and probabilities for every model.")
     for name in report["models"]:
         metrics = report["metrics"][name]
         print(f"  {name}: accuracy={metrics['accuracy']:.3f} macro_f1={metrics['macro_f1']:.3f}")
-    print("  note: metrics describe fictional-fixture mechanics only, not real-data performance")
-    print(f"  wrote {report['artifacts']['report']} and {report['artifacts']['bundle']}")
+    print("  These scores measure fictional plays, not performance on real NFL data.")
+    print(f"  Wrote {report['artifacts']['report']} and {report['artifacts']['bundle']}.")

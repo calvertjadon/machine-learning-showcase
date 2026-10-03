@@ -1,26 +1,26 @@
-"""Linear regression from three angles: closed form, scikit-learn, gradient descent.
+"""Linear regression with three solvers: closed form, scikit-learn, gradient descent.
 
-This notebook-style script (percent-format cells, ``# %%``) asks a small and
-fully reproducible question: on a noisy linear relationship that we generate
-ourselves, how closely do three ordinary least squares solvers agree, and how
-does an original batch gradient descent implementation approach the same
-solution?
+This notebook-style script uses percent-format cells, marked with ``# %%``, and
+answers one small question. On a noisy linear relationship that the script
+generates itself, how closely do three ordinary least squares solvers agree,
+and how close does an original batch gradient descent implementation get to the
+same solution?
 
-What is compared
-----------------
+What the script compares
+------------------------
 * the closed-form least squares solution, computed with ``numpy.linalg.lstsq``;
 * :class:`sklearn.linear_model.LinearRegression`;
 * :class:`BatchGradientDescentRegressor`, implemented in this file, which
-  standardizes features using training-split statistics only and records its
-  training loss every epoch so convergence can be plotted.
+  standardizes features with training-split statistics only and records the
+  training loss after every epoch so the script can plot convergence.
 
-Models are fitted on the training split only; the held-out split is used
-exclusively for the reported R2 and MSE numbers. The JSON file written by this
-script is the source of truth for every metric quoted elsewhere in the
-repository, and no network access is required.
+The script fits every model on the training split only and uses the held-out
+split for the reported R2 and MSE numbers alone. The JSON file it writes holds
+every metric quoted elsewhere in the repository, and the script needs no
+network access.
 
-Authorship: original code created for this 2026 showcase refresh with AI
-assistance under Jadon Calvert's direction; not copied from the 2024
+Authorship: Jadon Calvert directed this original code, written for the 2026
+refresh of the project with AI assistance. Nothing comes from the 2024
 coursework, and no course handouts, notebooks or third-party datasets are
 reproduced here.
 
@@ -46,8 +46,8 @@ from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-# Figures are always written to PNG files, so pin a headless backend that
-# behaves identically in a terminal, in CI runs and in headless renders.
+# The script writes every figure to a PNG file and may run in a terminal, in
+# CI or on a machine without a display, so it selects the headless Agg backend.
 plt.switch_backend("Agg")
 
 DEFAULT_SEED = 42
@@ -140,8 +140,9 @@ def fit_analytical_least_squares(
 ) -> tuple[float, np.ndarray]:
     """Return ``(intercept, coefficients)`` from the closed-form solution.
 
-    The normal equations are solved through ``numpy.linalg.lstsq``, which uses
-    a singular value decomposition instead of inverting ``X.T @ X`` directly.
+    The script solves the normal equations with ``numpy.linalg.lstsq``, which
+    uses a singular value decomposition instead of inverting ``X.T @ X``
+    directly.
     """
     design = np.column_stack([np.ones(x.shape[0]), x])
     solution = np.linalg.lstsq(design, y, rcond=None)[0]
@@ -152,10 +153,10 @@ def fit_analytical_least_squares(
 class BatchGradientDescentRegressor:
     """Ordinary least squares fitted by batch gradient descent, written here.
 
-    Features are standardized with the mean and standard deviation of the
-    training split only, and the same statistics are reused at prediction time.
-    The training mean squared error is recorded once per epoch so that
-    convergence can be inspected and plotted.
+    The class standardizes features with the mean and standard deviation of the
+    training split only and reuses those statistics at prediction time. It
+    records the training mean squared error after each epoch so the script can
+    plot convergence.
     """
 
     def __init__(self, *, learning_rate: float = 0.1, epochs: int = 400) -> None:
@@ -202,14 +203,14 @@ class BatchGradientDescentRegressor:
 
     @property
     def coefficients_(self) -> np.ndarray:
-        """Coefficients expressed in the original (unscaled) feature units."""
+        """Coefficients expressed in the original, unscaled feature units."""
         if self.coef_scaled_ is None or self.scaler_scale_ is None:
             raise NotFittedError("fit() must be called before coefficients_.")
         return self.coef_scaled_ / self.scaler_scale_
 
     @property
     def intercept_(self) -> float:
-        """Intercept expressed in the original (unscaled) feature units."""
+        """Intercept expressed in the original, unscaled feature units."""
         if self.scaler_mean_ is None or self.scaler_scale_ is None:
             raise NotFittedError("fit() must be called before intercept_.")
         if self.coef_scaled_ is None:
@@ -262,7 +263,7 @@ def plot_convergence(
     """Plot training loss per epoch for each gradient descent learning rate."""
     fig, ax = plt.subplots(figsize=(8.5, 4.6))
     for label, history in histories.items():
-        ax.plot(np.arange(len(history)), history, label=f"lr = {label}")
+        ax.plot(np.arange(len(history)), history, label=f"learning rate {label}")
     ax.axhline(
         analytical_train_mse,
         color="black",
@@ -272,7 +273,7 @@ def plot_convergence(
     )
     ax.set_yscale("log")
     ax.set_xlabel("epoch")
-    ax.set_ylabel("train mean squared error (log scale)")
+    ax.set_ylabel("train mean squared error, log scale")
     ax.set_title("Batch gradient descent converges to the least squares optimum")
     ax.legend()
     save_figure(fig, output_path)
@@ -441,7 +442,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     }
     reports["batch gradient descent"]["feature_scaling"] = (
-        "training-split mean and standard deviation, reused for prediction"
+        "the mean and standard deviation of the training split, reused at prediction time"
     )
 
     convergence: dict[str, Any] = {}
@@ -470,8 +471,8 @@ def main(argv: list[str] | None = None) -> int:
         "seed": args.seed,
         "environment": environment_info(),
         "protocol": (
-            "Every model is fitted on the training split only; the held-out "
-            "split is used exclusively for the reported R2 and MSE values."
+            "The script fits every model on the training split only and uses "
+            "the held-out split for the reported R2 and MSE values alone."
         ),
         "data": {
             "n_train": N_TRAIN,
@@ -512,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         args.output_dir / "linear_regression_holdout.png",
     )
 
-    print(f"== linear regression example (seed {args.seed}) ==")
+    print(f"== linear regression example, seed {args.seed} ==")
     print(f"train rows: {N_TRAIN} | test rows: {N_TEST} | features: {N_FEATURES}")
     for name, report in reports.items():
         print(f"{name}:")
@@ -520,8 +521,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  test MSE {report['test_mse']:.4f} | test R2 {report['test_r2']:.4f}")
     gd_report = reports["batch gradient descent"]
     print(f"gradient descent final train MSE {gd_report['train_mse']:.6f}")
-    print(f"metrics -> {metrics_path}")
-    print(f"figures -> {args.output_dir}/linear_regression_*.png")
+    print(f"metrics written to {metrics_path}")
+    print(f"figures written to {args.output_dir}/linear_regression_*.png")
     return 0
 
 

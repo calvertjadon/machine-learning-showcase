@@ -31,8 +31,8 @@ It does not cover third-party data or software. In particular:
 
 - The NFL play-by-play dataset is not distributed with this repository and
   its upstream licensing is not established; see docs/data.md.
-- Python dependencies (scikit-learn, NumPy, pandas, matplotlib, joblib, and
-  others) remain under their own licenses; see docs/provenance.md.
+- Python dependencies, including scikit-learn, NumPy, pandas, matplotlib, and
+  joblib, keep their own licenses. See docs/provenance.md.
 - Example datasets bundled with scikit-learn remain under the terms of their
   original sources; see docs/provenance.md.
 - NFL and team names are trademarks of their respective owners and are used

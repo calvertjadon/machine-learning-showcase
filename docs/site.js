@@ -1,8 +1,7 @@
-/* Static results report for the Machine-Learning Showcase.
-   Reads the JSON that the repository's own commands wrote under results/.
-   No external requests, no hardcoded metric values: every number rendered
-   here comes from those files. If a fetch fails, the page shows an
-   actionable alert instead of a fallback. */
+/* Machine learning studies static report.
+   Reads measured scores from JSON files under results/.
+   The page makes no external requests and invents no fallback scores.
+   If a fetch fails, an alert explains the error. */
 
 (function () {
   "use strict";
@@ -24,10 +23,10 @@
   };
 
   var MODEL_SUMMARIES = {
-    random_forest: "highest accuracy; the rare-class trade-off is the point of the table above.",
-    logistic_regression: "highest macro F1; keeps the rare spike class alive.",
-    down_distance: "rule-based reference built from training-set down-and-distance counts.",
-    majority: "predicts pass for every play; zero recall on all other classes."
+    random_forest: "Highest accuracy of the four models; it trails logistic regression on macro F1 because it predicts few QB spikes.",
+    logistic_regression: "Highest macro F1; it catches more QB spikes than the forest, at the cost of more false spike flags.",
+    down_distance: "Rule-based reference built from training-set down-and-distance counts.",
+    majority: "Predicts pass for every play; recall is zero for the other five classes."
   };
 
   var CLASS_LABELS = {
@@ -177,7 +176,7 @@
         return meta ? intFormat.format(meta.train_games) : null;
       },
       "nfl.train_dates": function () {
-        return meta ? meta.train_date_min + " \u2192 " + meta.train_date_max : null;
+        return meta ? meta.train_date_min + " to " + meta.train_date_max : null;
       },
       "nfl.train_mix": function () {
         return meta ? mix(meta.train_label_counts) : null;
@@ -189,7 +188,7 @@
         return meta ? intFormat.format(meta.test_games) : null;
       },
       "nfl.test_dates": function () {
-        return meta ? meta.test_date_min + " \u2192 " + meta.test_date_max : null;
+        return meta ? meta.test_date_min + " to " + meta.test_date_max : null;
       },
       "nfl.test_mix": function () {
         return meta ? mix(meta.test_label_counts) : null;
@@ -374,7 +373,7 @@
         var vocab = toy.token_indicators.vocabulary_size;
         var trainVocab = toyHoldout ? toyHoldout.vocabulary_size_train : null;
         var trainText = typeof trainVocab === "number" ? intFormat.format(trainVocab) : "\u2013";
-        return intFormat.format(vocab) + " terms (training split: " + trainText + ")";
+        return intFormat.format(vocab) + " terms. Training vocabulary has " + trainText + " terms.";
       };
     }
 
@@ -474,7 +473,7 @@
     body.textContent = "";
     if (!state.nfl) {
       var unavailable = el("tr");
-      unavailable.appendChild(el("td", null, "Metrics unavailable \u2014 results/metrics.json could not be loaded (see the alert above)."));
+      unavailable.appendChild(el("td", null, "Metrics unavailable. The file results/metrics.json could not be loaded; see the alert above."));
       unavailable.firstChild.colSpan = 5;
       body.appendChild(unavailable);
       return;
@@ -533,19 +532,19 @@
     if (!m) {
       body.textContent = "";
       var row = el("tr");
-      var cell = el("td", null, "Metrics unavailable \u2014 results/metrics.json could not be loaded (see the alert above).");
+      var cell = el("td", null, "Metrics unavailable. The file results/metrics.json could not be loaded; see the alert above.");
       cell.colSpan = 5;
       row.appendChild(cell);
       body.appendChild(row);
-      setText(summary, "Unavailable \u2014 results/metrics.json could not be loaded.");
+      setText(summary, "Unavailable. The file results/metrics.json could not be loaded.");
       return;
     }
 
     var label = MODEL_LABELS[key] || key;
-    setText(caption, "Per-class metrics on the chronological holdout \u2014 " + label + ".");
+    setText(caption, "Per-class metrics on the chronological holdout for " + label + ".");
     setText(
       summary,
-      label + ": holdout accuracy " + pct(m.accuracy) + ", macro F1 " + pct(m.macro_f1) + " \u2014 " + (MODEL_SUMMARIES[key] || "")
+      label + ": holdout accuracy " + pct(m.accuracy) + ", macro F1 " + pct(m.macro_f1) + ". " + (MODEL_SUMMARIES[key] || "")
     );
 
     body.textContent = "";
@@ -562,7 +561,7 @@
   function markExampleUnavailable(exampleId) {
     var facts = $("#" + exampleId + " .facts--inline");
     if (facts) {
-      var message = el("p", "field-note", "Example metrics unavailable \u2014 this JSON file could not be loaded (see the alert above). Figures shown below are static assets and may still be visible.");
+      var message = el("p", "field-note", "Example metrics unavailable. This JSON file could not be loaded; see the alert above. Figures shown below are static assets and may still be visible.");
       facts.parentNode.replaceChild(message, facts);
     }
   }
@@ -581,7 +580,7 @@
     });
     setText(
       detail,
-      "Failed to load: " + affected.join("; ") + ". Nothing on this page is faked to cover the gap; empty metrics stay blank."
+      "Failed to load: " + affected.join("; ") + ". Nothing on this page is invented to cover the gap; empty metrics stay blank."
     );
     alert.hidden = false;
   }

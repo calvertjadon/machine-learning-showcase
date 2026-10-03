@@ -1,24 +1,25 @@
 """Unsupervised grouping: k-means on generated blobs and image color quantization.
 
-This notebook-style script (percent-format cells, ``# %%``) runs two
-unsupervised studies whose data is generated inside the script.
+This notebook-style script uses percent-format cells, marked with ``# %%``, and
+runs two unsupervised studies. Both studies generate their data inside the
+script.
 
-1. Blobs: a seeded two-dimensional mixture with four well separated centers is
-   clustered with k-means for every k in a small range. Inertia and silhouette
-   are recorded for each k, the partition at the generator's k is compared with
-   the true labels using the adjusted Rand index, and the diagnostics are
-   plotted so the elbow and the silhouette peak can be inspected.
-2. Image quantization: an original synthetic RGB scene rendered in numpy is
-   approximated by a k-means palette. The script reports the quantization error
-   (RMSE, MAE, PSNR), the fraction of pixels whose color changed, and the
-   compression arithmetic for an indexed palette. No photograph, course image
-   or downloaded asset is used anywhere.
+1. Blobs. The script draws a seeded two-dimensional mixture with four well
+   separated centers and clusters it with k-means for every k in a small range.
+   It records inertia and silhouette for each k, compares the partition at the
+   generator's k with the true labels using the adjusted Rand index, and plots
+   the diagnostics so the elbow and the silhouette peak can be inspected.
+2. Image quantization. The script renders an original synthetic RGB scene in
+   numpy and approximates it with a k-means palette. It reports the
+   quantization error as RMSE, MAE and PSNR, the fraction of pixels whose
+   color changed, and the compression arithmetic for an indexed palette. No
+   photograph, course image or downloaded asset appears anywhere.
 
-The JSON file written by this script is the source of truth for every metric
-quoted elsewhere in the repository, and no network access is required.
+The script writes a JSON file that holds every metric quoted elsewhere in the
+repository, and it needs no network access.
 
-Authorship: original code created for this 2026 showcase refresh with AI
-assistance under Jadon Calvert's direction; not copied from the 2024
+Authorship: Jadon Calvert directed this original code, written for the 2026
+refresh of the project with AI assistance. Nothing comes from the 2024
 coursework, and no course handouts, notebooks or third-party images are
 reproduced here.
 
@@ -44,8 +45,8 @@ from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 
-# Figures are always written to PNG files, so pin a headless backend that
-# behaves identically in a terminal, in CI runs and in headless renders.
+# The script writes every figure to a PNG file and may run in a terminal, in
+# CI or on a machine without a display, so it selects the headless Agg backend.
 plt.switch_backend("Agg")
 
 DEFAULT_SEED = 42
@@ -348,7 +349,7 @@ def plot_blob_study(study: BlobStudy, output_path: Path) -> None:
     k_values = [entry["k"] for entry in study.summary["k_sweep"]]
     inertias = [entry["inertia"] for entry in study.summary["k_sweep"]]
     silhouettes = [entry["silhouette"] for entry in study.summary["k_sweep"]]
-    axes[1].plot(k_values, inertias, marker="o", label="inertia (left)")
+    axes[1].plot(k_values, inertias, marker="o", label="inertia, left axis")
     axes[1].set_xlabel("k")
     axes[1].set_ylabel("inertia")
     axes[1].axvline(
@@ -364,9 +365,9 @@ def plot_blob_study(study: BlobStudy, output_path: Path) -> None:
         silhouettes,
         marker="s",
         color="tab:orange",
-        label="silhouette (right)",
+        label="silhouette, right axis",
     )
-    twin.set_ylabel("silhouette (right)")
+    twin.set_ylabel("silhouette, right axis")
     axes[1].set_title("K selection diagnostics")
     handles = axes[1].get_lines() + twin.get_lines()
     names = [line.get_label() for line in handles]
@@ -390,7 +391,7 @@ def plot_image_study(study: ImageStudy, output_path: Path) -> None:
     shares = study.summary["cluster_pixel_shares"]
     share_labels = [f"{share:.1%}" for share in shares]
     axes[1, 0].set_xticks(np.arange(study.palette.shape[0]), share_labels, rotation=45)
-    axes[1, 0].set_title("Palette colors (share of pixels)")
+    axes[1, 0].set_title("Palette colors, with the pixel share of each color")
 
     error = np.abs(study.segmented.astype(np.float64) - study.image.astype(np.float64))
     error_map = error.mean(axis=2)
@@ -447,7 +448,7 @@ def main(argv: list[str] | None = None) -> int:
 
     blob_summary = blob_study.summary
     selected = blob_summary["selected"]
-    print(f"== clustering example (seed {args.seed}) ==")
+    print(f"== clustering example, seed {args.seed} ==")
     print(f"blobs: {blob_summary['n_samples']} generated points")
     print(f"  k={blob_summary['selected_k']}: inertia {selected['inertia']:.1f}")
     print(f"  silhouette {selected['silhouette']:.3f}")
@@ -462,15 +463,15 @@ def main(argv: list[str] | None = None) -> int:
         f"{image_summary['n_colors']} colors",
     )
     psnr = quantization["psnr_db"]
-    psnr_text = "undefined (zero error)" if psnr is None else f"{psnr:.2f} dB"
+    psnr_text = "undefined, the error is zero" if psnr is None else f"{psnr:.2f} dB"
     print(f"  quantization RMSE {quantization['rmse']:.2f} | PSNR {psnr_text}")
     print(
         f"  pixels changed {quantization['pixels_changed_fraction']:.1%} | "
         f"index {compression['index_bits_per_pixel']} bits/pixel",
     )
     print(f"  source colors {quantization['unique_colors_source']}")
-    print(f"metrics -> {metrics_path}")
-    print(f"figures -> {args.output_dir}/clustering_*.png")
+    print(f"metrics written to {metrics_path}")
+    print(f"figures written to {args.output_dir}/clustering_*.png")
     return 0
 
 
