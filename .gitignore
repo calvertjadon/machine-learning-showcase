@@ -1,0 +1,32 @@
+# Python bytecode and build caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments and tool caches
+.venv/
+.venv*/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Raw data is never committed or published (see docs/data.md)
+data/
+*.csv
+
+# Local model bundles and run artifacts stay local; generated model files are never published
+artifacts/
+*.joblib
+*.pkl
+*.pickle
+
+# Local secrets and environment overrides
+.env
+.env.*
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db

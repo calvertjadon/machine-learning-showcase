@@ -1,0 +1,247 @@
+{
+  "author": "Jadon Calvert",
+  "breast_cancer": {
+    "class_names": [
+      "malignant",
+      "benign"
+    ],
+    "gaussian_nb": {
+      "accuracy": 0.9370629370629371,
+      "classification_report": {
+        "accuracy": 0.9370629370629371,
+        "benign": {
+          "f1-score": 0.9508196721311475,
+          "precision": 0.9354838709677419,
+          "recall": 0.9666666666666667,
+          "support": 90.0
+        },
+        "macro avg": {
+          "f1-score": 0.9317205156772242,
+          "precision": 0.937741935483871,
+          "recall": 0.9267295597484277,
+          "support": 143.0
+        },
+        "malignant": {
+          "f1-score": 0.912621359223301,
+          "precision": 0.94,
+          "recall": 0.8867924528301887,
+          "support": 53.0
+        },
+        "weighted avg": {
+          "f1-score": 0.9366622554590086,
+          "precision": 0.9371576810286487,
+          "recall": 0.9370629370629371,
+          "support": 143.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          47,
+          6
+        ],
+        [
+          3,
+          87
+        ]
+      ],
+      "labels": [
+        "malignant",
+        "benign"
+      ],
+      "macro_f1": 0.9317205156772242
+    },
+    "holdout": {
+      "n_test": 143,
+      "n_train": 426,
+      "stratified": true,
+      "test_fraction": 0.25
+    },
+    "knn": {
+      "accuracy": 0.965034965034965,
+      "classification_report": {
+        "accuracy": 0.965034965034965,
+        "benign": {
+          "f1-score": 0.972972972972973,
+          "precision": 0.9473684210526315,
+          "recall": 1.0,
+          "support": 90.0
+        },
+        "macro avg": {
+          "f1-score": 0.9617340112389617,
+          "precision": 0.9736842105263157,
+          "recall": 0.9528301886792453,
+          "support": 143.0
+        },
+        "malignant": {
+          "f1-score": 0.9504950495049505,
+          "precision": 1.0,
+          "recall": 0.9056603773584906,
+          "support": 53.0
+        },
+        "weighted avg": {
+          "f1-score": 0.9646419943449647,
+          "precision": 0.9668752300331246,
+          "recall": 0.965034965034965,
+          "support": 143.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          48,
+          5
+        ],
+        [
+          0,
+          90
+        ]
+      ],
+      "cv_selection": {
+        "best_k": 9,
+        "best_mean_cv_macro_f1": 0.9669091251476221,
+        "grid": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          15
+        ],
+        "mean_cv_macro_f1": [
+          0.9319421135240745,
+          0.9592029061763088,
+          0.9642171538333526,
+          0.9616404066135594,
+          0.9669091251476221,
+          0.9644611762481864,
+          0.9615844498951891
+        ],
+        "scoring": "macro F1, 5-fold stratified cross-validation on the train split",
+        "std_cv_macro_f1": [
+          0.01708913811094853,
+          0.015112191361478719,
+          0.0154192288184441,
+          0.01448707185909637,
+          0.010466645692869524,
+          0.005243492422037936,
+          0.01670337815216437
+        ]
+      },
+      "labels": [
+        "malignant",
+        "benign"
+      ],
+      "macro_f1": 0.9617340112389617
+    },
+    "n_features": 30,
+    "n_samples": 569,
+    "notes": "A single stratified split is reported; the scaler and KNN's k are fitted on the training split only. These scores describe this split, not the dataset as a whole, and GaussianNB is scale invariant, so its scaler only keeps the pipeline convention.",
+    "source": "sklearn.datasets.load_breast_cancer (bundled, no download)"
+  },
+  "environment": {
+    "matplotlib": "3.9.2",
+    "numpy": "1.26.4",
+    "python": "3.12.13",
+    "scikit_learn": "1.5.2"
+  },
+  "example": "classification",
+  "generated_by": "examples/classification.py",
+  "seed": 42,
+  "toy_text": {
+    "class_counts": {
+      "ham": 16,
+      "spam": 16
+    },
+    "corpus": "Original fictional teaching messages written for this repository; not a real SMS dataset and not a benchmark of any kind.",
+    "cross_validation": {
+      "folds": 5,
+      "macro_f1_mean": 0.9003174603174603,
+      "macro_f1_per_fold": [
+        1.0,
+        0.8444444444444444,
+        1.0,
+        0.8285714285714285,
+        0.8285714285714285
+      ],
+      "macro_f1_std": 0.08159656546751669,
+      "vocabulary_fit": "inside each fold through the pipeline (train-only)"
+    },
+    "holdout": {
+      "accuracy": 1.0,
+      "classification_report": {
+        "accuracy": 1.0,
+        "ham": {
+          "f1-score": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 4.0
+        },
+        "macro avg": {
+          "f1-score": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 8.0
+        },
+        "spam": {
+          "f1-score": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 4.0
+        },
+        "weighted avg": {
+          "f1-score": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "support": 8.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          4,
+          0
+        ],
+        [
+          0,
+          4
+        ]
+      ],
+      "labels": [
+        "ham",
+        "spam"
+      ],
+      "macro_f1": 1.0,
+      "n_test": 8,
+      "n_train": 24,
+      "stratified": true,
+      "test_fraction": 0.25,
+      "vocabulary_size_train": 361
+    },
+    "limitations": "About thirty fictional sentences; any high score reflects this toy corpus, not real spam-filter quality, and the corpus is far too small for generalization claims.",
+    "n_messages": 32,
+    "pipeline": "TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True) -> MultinomialNB(alpha=1.0)",
+    "token_indicators": {
+      "fit_on": "training split only (the same pipeline fit that produced the holdout metrics; no full-corpus refit)",
+      "most_ham_associated": [
+        "room",
+        "at",
+        "the",
+        "is",
+        "moved",
+        "moved to",
+        "thanks",
+        "the draft"
+      ],
+      "most_spam_associated": [
+        "now",
+        "free",
+        "with",
+        "no",
+        "today",
+        "are",
+        "you are",
+        "claim"
+      ],
+      "vocabulary_size": 361
+    }
+  }
+}

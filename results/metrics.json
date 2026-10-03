@@ -1,0 +1,536 @@
+{
+  "metadata": {
+    "source_file": "NFL Play by Play 2009-2018 (v5).csv",
+    "source_bytes": 700397316,
+    "source_sha256": "33708680002e8e57eb42b1f41ff45b214fac8422952a89bb27acbeb18726dc90",
+    "exclude_ambiguous_games": true,
+    "source_cleaning": {
+      "raw_rows": 449371,
+      "exact_duplicate_rows_removed": 2393,
+      "ambiguous_id_groups": 22,
+      "ambiguous_games_excluded": 1,
+      "ambiguous_rows_removed": 268,
+      "retained_rows": 446710
+    },
+    "generated_utc": "2026-10-03T03:28:44+00:00",
+    "python_version": "3.12.13",
+    "sklearn_version": "1.5.2",
+    "numpy_version": "1.26.4",
+    "pandas_version": "2.2.3",
+    "holdout_start": "2017-09-01",
+    "seed": 42,
+    "trees": 200,
+    "jobs": 2,
+    "forest_params": {
+      "n_estimators": 200,
+      "max_depth": 18,
+      "min_samples_leaf": 5,
+      "random_state": 42,
+      "n_jobs": 2
+    },
+    "feature_columns": [
+      "yardline_100",
+      "quarter_seconds_remaining",
+      "half_seconds_remaining",
+      "qtr",
+      "down",
+      "ydstogo",
+      "posteam_timeouts_remaining",
+      "defteam_timeouts_remaining",
+      "score_differential",
+      "previous_yards_gained",
+      "clock_running_proxy",
+      "home_team",
+      "away_team",
+      "posteam",
+      "defteam",
+      "previous_play_type"
+    ],
+    "target_labels": [
+      "field_goal",
+      "pass",
+      "punt",
+      "qb_kneel",
+      "qb_spike",
+      "run"
+    ],
+    "train_rows": 288530,
+    "train_games": 2045,
+    "train_date_min": "2009-09-10",
+    "train_date_max": "2017-01-01",
+    "train_label_counts": {
+      "field_goal": 7860,
+      "pass": 150373,
+      "punt": 19447,
+      "qb_kneel": 3054,
+      "qb_spike": 562,
+      "run": 107234
+    },
+    "test_rows": 66965,
+    "test_games": 480,
+    "test_date_min": "2017-09-07",
+    "test_date_max": "2018-12-17",
+    "test_label_counts": {
+      "field_goal": 1861,
+      "pass": 35187,
+      "punt": 4359,
+      "qb_kneel": 757,
+      "qb_spike": 121,
+      "run": 24680
+    }
+  },
+  "models": {
+    "majority": {
+      "accuracy": 0.5254535951616516,
+      "macro_f1": 0.11481909311614065,
+      "per_class": {
+        "field_goal": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 1861.0
+        },
+        "pass": {
+          "precision": 0.5254535951616516,
+          "recall": 1.0,
+          "f1-score": 0.6889145586968439,
+          "support": 35187.0
+        },
+        "punt": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 4359.0
+        },
+        "qb_kneel": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 757.0
+        },
+        "qb_spike": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 121.0
+        },
+        "run": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 24680.0
+        },
+        "accuracy": 0.5254535951616516,
+        "macro avg": {
+          "precision": 0.08757559919360859,
+          "recall": 0.16666666666666666,
+          "f1-score": 0.11481909311614065,
+          "support": 66965.0
+        },
+        "weighted avg": {
+          "precision": 0.27610148066830487,
+          "recall": 0.5254535951616516,
+          "f1-score": 0.36199263162645934,
+          "support": 66965.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          0,
+          1861,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          35187,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          4359,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          757,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          121,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          24680,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "labels": [
+        "field_goal",
+        "pass",
+        "punt",
+        "qb_kneel",
+        "qb_spike",
+        "run"
+      ]
+    },
+    "down_distance": {
+      "accuracy": 0.6068841932352722,
+      "macro_f1": 0.3297077416947058,
+      "per_class": {
+        "field_goal": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 1861.0
+        },
+        "pass": {
+          "precision": 0.7239220870106139,
+          "recall": 0.5291727058288572,
+          "f1-score": 0.611413935771984,
+          "support": 35187.0
+        },
+        "punt": {
+          "precision": 0.6225364181662382,
+          "recall": 1.0,
+          "f1-score": 0.7673620279904938,
+          "support": 4359.0
+        },
+        "qb_kneel": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 757.0
+        },
+        "qb_spike": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 121.0
+        },
+        "run": {
+          "precision": 0.51577010688628,
+          "recall": 0.7155996758508915,
+          "f1-score": 0.5994704864057567,
+          "support": 24680.0
+        },
+        "accuracy": 0.6068841932352722,
+        "macro avg": {
+          "precision": 0.31037143534385536,
+          "recall": 0.3741287302799581,
+          "f1-score": 0.3297077416947058,
+          "support": 66965.0
+        },
+        "weighted avg": {
+          "precision": 0.610998117828455,
+          "recall": 0.6068841932352722,
+          "f1-score": 0.5921553773241759,
+          "support": 66965.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          0,
+          86,
+          1706,
+          0,
+          0,
+          69
+        ],
+        [
+          0,
+          18620,
+          598,
+          0,
+          0,
+          15969
+        ],
+        [
+          0,
+          0,
+          4359,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          309,
+          8,
+          0,
+          0,
+          440
+        ],
+        [
+          0,
+          18,
+          0,
+          0,
+          0,
+          103
+        ],
+        [
+          0,
+          6688,
+          331,
+          0,
+          0,
+          17661
+        ]
+      ],
+      "labels": [
+        "field_goal",
+        "pass",
+        "punt",
+        "qb_kneel",
+        "qb_spike",
+        "run"
+      ]
+    },
+    "logistic_regression": {
+      "accuracy": 0.6741133427910102,
+      "macro_f1": 0.6734141286341463,
+      "per_class": {
+        "field_goal": {
+          "precision": 0.8291713961407492,
+          "recall": 0.7850617947340139,
+          "f1-score": 0.8065139387248137,
+          "support": 1861.0
+        },
+        "pass": {
+          "precision": 0.6782990524612896,
+          "recall": 0.7507033847727854,
+          "f1-score": 0.7126669364629704,
+          "support": 35187.0
+        },
+        "punt": {
+          "precision": 0.9075291622481442,
+          "recall": 0.9816471667813719,
+          "f1-score": 0.943134229667181,
+          "support": 4359.0
+        },
+        "qb_kneel": {
+          "precision": 0.792332268370607,
+          "recall": 0.655217965653897,
+          "f1-score": 0.7172812725958062,
+          "support": 757.0
+        },
+        "qb_spike": {
+          "precision": 0.3541666666666667,
+          "recall": 0.2809917355371901,
+          "f1-score": 0.31336405529953915,
+          "support": 121.0
+        },
+        "run": {
+          "precision": 0.5982327234308217,
+          "recall": 0.504740680713128,
+          "f1-score": 0.5475243390545679,
+          "support": 24680.0
+        },
+        "accuracy": 0.6741133427910102,
+        "macro avg": {
+          "precision": 0.6932885448863796,
+          "recall": 0.6597271213653978,
+          "f1-score": 0.6734141286341463,
+          "support": 66965.0
+        },
+        "weighted avg": {
+          "precision": 0.6686082230046873,
+          "recall": 0.6741133427910102,
+          "f1-score": 0.6687442052164811,
+          "support": 66965.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1461,
+          279,
+          96,
+          6,
+          9,
+          10
+        ],
+        [
+          169,
+          26415,
+          214,
+          94,
+          46,
+          8249
+        ],
+        [
+          22,
+          58,
+          4279,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          145,
+          3,
+          496,
+          4,
+          106
+        ],
+        [
+          0,
+          85,
+          0,
+          1,
+          34,
+          1
+        ],
+        [
+          107,
+          11961,
+          123,
+          29,
+          3,
+          12457
+        ]
+      ],
+      "labels": [
+        "field_goal",
+        "pass",
+        "punt",
+        "qb_kneel",
+        "qb_spike",
+        "run"
+      ]
+    },
+    "random_forest": {
+      "accuracy": 0.7092511013215859,
+      "macro_f1": 0.6663116720302578,
+      "per_class": {
+        "field_goal": {
+          "precision": 0.9133333333333333,
+          "recall": 0.8833960236432026,
+          "f1-score": 0.8981152690521715,
+          "support": 1861.0
+        },
+        "pass": {
+          "precision": 0.7048067141403865,
+          "recall": 0.7875920084121977,
+          "f1-score": 0.7439032574120552,
+          "support": 35187.0
+        },
+        "punt": {
+          "precision": 0.9217021276595745,
+          "recall": 0.993805918788713,
+          "f1-score": 0.9563969533061044,
+          "support": 4359.0
+        },
+        "qb_kneel": {
+          "precision": 0.9704724409448819,
+          "recall": 0.6512549537648613,
+          "f1-score": 0.7794466403162056,
+          "support": 757.0
+        },
+        "qb_spike": {
+          "precision": 1.0,
+          "recall": 0.01652892561983471,
+          "f1-score": 0.032520325203252036,
+          "support": 121.0
+        },
+        "run": {
+          "precision": 0.6450690574267022,
+          "recall": 0.5393435980551053,
+          "f1-score": 0.5874875868917577,
+          "support": 24680.0
+        },
+        "accuracy": 0.7092511013215859,
+        "macro avg": {
+          "precision": 0.859230612250813,
+          "recall": 0.6453202380473191,
+          "f1-score": 0.6663116720302578,
+          "support": 66965.0
+        },
+        "weighted avg": {
+          "precision": 0.706240554518711,
+          "recall": 0.7092511013215859,
+          "f1-score": 0.7034901883712825,
+          "support": 66965.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          1644,
+          133,
+          47,
+          2,
+          0,
+          35
+        ],
+        [
+          98,
+          27713,
+          185,
+          9,
+          0,
+          7182
+        ],
+        [
+          13,
+          13,
+          4332,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          157,
+          1,
+          493,
+          0,
+          105
+        ],
+        [
+          2,
+          116,
+          0,
+          0,
+          2,
+          1
+        ],
+        [
+          42,
+          11188,
+          135,
+          4,
+          0,
+          13311
+        ]
+      ],
+      "labels": [
+        "field_goal",
+        "pass",
+        "punt",
+        "qb_kneel",
+        "qb_spike",
+        "run"
+      ]
+    }
+  }
+}

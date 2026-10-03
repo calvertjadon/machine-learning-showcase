@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nfl-showcase"
+version = "0.1.0"
+description = "Original, leakage-safe NFL play-type classification with temporal evaluation"
+authors = [{ name = "Jadon Calvert" }]
+requires-python = ">=3.12,<3.13"
+license = "MIT"
+dependencies = [
+    "joblib==1.6.0",
+    "matplotlib==3.9.2",
+    "numpy==1.26.4",
+    "pandas==2.2.3",
+    "scikit-learn==1.5.2",
+]
+
+[project.scripts]
+nfl-showcase = "nfl_showcase.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.15.22",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nfl_showcase"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["nfl_showcase", "helpers"]

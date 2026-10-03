@@ -1,0 +1,188 @@
+{
+  "author": "Jadon Calvert",
+  "blobs": {
+    "best_k_by_silhouette": 4,
+    "cluster_std": 0.65,
+    "k_sweep": [
+      {
+        "inertia": 14061.015247213181,
+        "k": 2,
+        "silhouette": 0.5172272654024596
+      },
+      {
+        "inertia": 4480.324778868327,
+        "k": 3,
+        "silhouette": 0.7157793713710799
+      },
+      {
+        "inertia": 492.1255573675629,
+        "k": 4,
+        "silhouette": 0.8475990241117576
+      },
+      {
+        "inertia": 443.29814230176953,
+        "k": 5,
+        "silhouette": 0.723713502347398
+      },
+      {
+        "inertia": 396.8010665148921,
+        "k": 6,
+        "silhouette": 0.597118730721739
+      },
+      {
+        "inertia": 356.51133647071197,
+        "k": 7,
+        "silhouette": 0.4587074262734795
+      },
+      {
+        "inertia": 316.3922744148352,
+        "k": 8,
+        "silhouette": 0.3342592655110466
+      }
+    ],
+    "n_samples": 600,
+    "selected": {
+      "adjusted_rand_index": 1.0,
+      "centroids": [
+        [
+          4.116753852627538,
+          -5.988868581314279
+        ],
+        [
+          -5.977032015205472,
+          4.58388437062308
+        ],
+        [
+          6.008119783295341,
+          5.96394323920509
+        ],
+        [
+          -0.022139380692480337,
+          0.01492625388686708
+        ]
+      ],
+      "cluster_sizes": [
+        150,
+        150,
+        150,
+        150
+      ],
+      "inertia": 492.1255573675629,
+      "iterations": 2,
+      "silhouette": 0.8475990241117576
+    },
+    "selected_k": 4,
+    "true_centers": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        6.0,
+        6.0
+      ],
+      [
+        -6.0,
+        4.5
+      ],
+      [
+        4.0,
+        -6.0
+      ]
+    ]
+  },
+  "environment": {
+    "matplotlib": "3.9.2",
+    "numpy": "1.26.4",
+    "python": "3.12.13",
+    "scikit_learn": "1.5.2"
+  },
+  "example": "clustering",
+  "generated_by": "examples/clustering.py",
+  "image_quantization": {
+    "cluster_pixel_shares": [
+      0.1657986111111111,
+      0.06790726273148148,
+      0.08763744212962964,
+      0.13322844328703703,
+      0.11812789351851852,
+      0.1529224537037037,
+      0.1540256076388889,
+      0.12035228587962964
+    ],
+    "compression": {
+      "index_bits_per_pixel": 3,
+      "index_bytes": 20736,
+      "index_stream_ratio": 8.0,
+      "note": "The index stream ratio ignores the palette; the total ratio includes one palette entry per color.",
+      "palette_bytes": 24,
+      "source_bits_per_pixel": 24,
+      "source_bytes": 165888,
+      "total_bytes_with_palette": 20760,
+      "total_ratio_with_palette": 7.990751445086705
+    },
+    "height": 192,
+    "kmeans_inertia": 68354667.1235365,
+    "kmeans_iterations": 58,
+    "n_colors": 8,
+    "n_pixels": 55296,
+    "noise_std": 4.0,
+    "palette_rgb": [
+      [
+        149,
+        150,
+        88
+      ],
+      [
+        204,
+        45,
+        169
+      ],
+      [
+        249,
+        249,
+        235
+      ],
+      [
+        75,
+        69,
+        151
+      ],
+      [
+        219,
+        191,
+        59
+      ],
+      [
+        37,
+        156,
+        148
+      ],
+      [
+        191,
+        86,
+        84
+      ],
+      [
+        92,
+        199,
+        81
+      ]
+    ],
+    "quantization": {
+      "mae": 15.562927999614198,
+      "per_channel_rmse": {
+        "blue": 14.89496403834879,
+        "green": 20.766114214411232,
+        "red": 24.14984897343697
+      },
+      "pixels_changed_fraction": 0.9998914930555556,
+      "psnr_db": 21.98075407240353,
+      "rmse": 20.300300972395217,
+      "unique_colors_quantized": 8,
+      "unique_colors_source": 46822
+    },
+    "width": 288
+  },
+  "seed": 42
+}

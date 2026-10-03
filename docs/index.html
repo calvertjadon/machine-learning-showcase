@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFL play-type prediction — measured results | Machine-Learning Showcase</title>
+<meta name="description" content="A static results report for an original leakage-conscious NFL play-type prediction experiment and three self-contained machine-learning examples. Every number is read at runtime from the repository's own results JSON.">
+<link rel="stylesheet" href="site.css">
+<script src="site.js" defer></script>
+<noscript><style>#data-status{display:none}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to the results</a>
+
+<header class="site-header">
+  <div class="wrap site-header__inner">
+    <p class="site-title"><a href="https://github.com/calvertjadon/machine-learning-showcase">Machine-Learning Showcase</a></p>
+    <nav aria-label="Report sections">
+      <ul class="site-nav">
+        <li><a href="#overview">Task</a></li>
+        <li><a href="#scoreboard">Scoreboard</a></li>
+        <li><a href="#tradeoff">Trade-off</a></li>
+        <li><a href="#protocol">Protocol</a></li>
+        <li><a href="#figures">Figures</a></li>
+        <li><a href="#per-class">Per-class table</a></li>
+        <li><a href="#examples">Examples</a></li>
+        <li><a href="#scope">Scope &amp; rights</a></li>
+        <li><a href="../README.md">README</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap" aria-busy="true" tabindex="-1">
+
+  <p id="data-status" class="status-banner" role="status">Loading measured metrics from <code>results/metrics.json</code> and <code>results/examples/&lowast;_metrics.json</code>&hellip;</p>
+
+  <section id="data-alert" class="alert alert--error" role="alert" hidden>
+    <h2>Measured metrics could not be loaded</h2>
+    <p id="data-alert-detail"></p>
+    <p>This page reads the JSON files that the repository's own commands wrote under <code>results/</code>. Serve the repository root (not the <code>docs/</code> directory alone) and reload:</p>
+    <pre><code>uv run python -m http.server 8000 --bind 127.0.0.1
+# then open http://127.0.0.1:8000/docs/</code></pre>
+    <p>Opening the file directly with <code>file://</code>, or serving only <code>docs/</code>, cannot read <code>../results/&lowast;.json</code>. No fallback numbers are shown, because none would be measured.</p>
+  </section>
+
+  <section id="overview" aria-labelledby="overview-heading">
+    <p class="eyebrow">Original work, 2026 refresh</p>
+    <h1 id="overview-heading">Predicting the next NFL play type from strictly causal context</h1>
+    <p class="lede">An original scikit-learn pipeline predicts which of six play types comes next — field goal, pass, punt, QB kneel, QB spike, or run — using only information available before the snap plus the previous play's context. The experiment is split chronologically: models are trained on earlier games and measured once on later games they never saw. This page reports that single holdout measurement, plus three small self-contained reference examples. Every number below is read at runtime from the repository's own <code>results/&lowast;.json</code>; nothing is typed in by hand or copied from an external benchmark.</p>
+    <div class="note-row">
+      <p><strong>Inputs:</strong> 11 numeric features (field position, clock, down and distance, timeouts, score differential, previous-play yards and a clock-running proxy) and 5 categorical features (home/away/posteam/defteam and previous play type).</p>
+      <p><strong>Protocol:</strong> a single date cutoff at <span class="num" data-fill="nfl.cutoff">–</span>; earlier games train, later games are the holdout. There is no test-set model selection and no random row shuffling.</p>
+      <p><strong>Disclosure:</strong> the 2026 refresh — its code, tests, documentation, results and this page — was produced with AI assistance under Jadon Calvert's direction. The underlying project is his 2024 coursework; the numbered results here are new.</p>
+    </div>
+  </section>
+
+  <section id="scoreboard" aria-labelledby="scoreboard-heading">
+    <p class="eyebrow">Measured on the chronological holdout</p>
+    <h2 id="scoreboard-heading">Scoreboard</h2>
+    <p class="section-intro">Four models, one shared holdout of <span class="num" data-fill="nfl.test_rows">–</span> plays from <span class="num" data-fill="nfl.test_games">–</span> games (<span class="num" data-fill="nfl.test_dates">–</span>). Accuracy and macro F1 are computed by scikit-learn from the same predictions; macro F1 weights all six play types equally, so rare plays count as much as passes and runs.</p>
+
+    <ol class="scoreboard">
+      <li class="card model-card" data-model-card="random_forest">
+        <div class="model-card__head">
+          <h3>Random forest</h3>
+          <p class="chip">Default prediction model</p>
+        </div>
+        <p class="model-card__value num" data-v="acc">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="acc-bar"></span></div>
+        <p class="model-card__label">holdout accuracy</p>
+        <p class="model-card__value num" data-v="mf1">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="mf1-bar"></span></div>
+        <p class="model-card__label">macro F1</p>
+        <p class="model-card__note">200 trees, max depth 18, min leaf 5. Chosen as the default <em>before</em> it was evaluated; it is not the best model under every metric. See the trade-off below.</p>
+      </li>
+      <li class="card model-card" data-model-card="logistic_regression">
+        <div class="model-card__head">
+          <h3>Logistic regression</h3>
+        </div>
+        <p class="model-card__value num" data-v="acc">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="acc-bar"></span></div>
+        <p class="model-card__label">holdout accuracy</p>
+        <p class="model-card__value num" data-v="mf1">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="mf1-bar"></span></div>
+        <p class="model-card__label">macro F1</p>
+        <p class="model-card__note">Multinomial linear model on scaled one-hot features. It leads the forest on macro F1 because it does not abandon the rare spike class.</p>
+      </li>
+      <li class="card model-card" data-model-card="down_distance">
+        <div class="model-card__head">
+          <h3>Down &amp; distance baseline</h3>
+        </div>
+        <p class="model-card__value num" data-v="acc">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="acc-bar"></span></div>
+        <p class="model-card__label">holdout accuracy</p>
+        <p class="model-card__value num" data-v="mf1">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="mf1-bar"></span></div>
+        <p class="model-card__label">macro F1</p>
+        <p class="model-card__note">Predicts the most common play type in each bucket of down and yards to go, counted from training data. A rule-based reference, not a fitted model of the passing game.</p>
+      </li>
+      <li class="card model-card" data-model-card="majority">
+        <div class="model-card__head">
+          <h3>Majority-class baseline</h3>
+        </div>
+        <p class="model-card__value num" data-v="acc">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="acc-bar"></span></div>
+        <p class="model-card__label">holdout accuracy</p>
+        <p class="model-card__value num" data-v="mf1">–</p>
+        <div class="meter" aria-hidden="true"><span data-v="mf1-bar"></span></div>
+        <p class="model-card__label">macro F1</p>
+        <p class="model-card__note">Predicts <em>pass</em> for every play. Its accuracy is not a football signal: it is the share of passes in the holdout, and its macro F1 shows what collapsing to one class costs.</p>
+      </li>
+    </ol>
+    <p class="field-note">Single holdout, single seed (<span class="num" data-fill="nfl.seed">–</span>). These are measurements of one temporal split, not benchmark claims about football prediction in general. <a href="../results/metrics.json">Open the raw metrics JSON</a>.</p>
+  </section>
+
+  <section id="tradeoff" aria-labelledby="tradeoff-heading">
+    <h2 id="tradeoff-heading">The accuracy leader is not the universal winner</h2>
+    <div class="callout callout--warning">
+      <p>The random forest posts the best accuracy (<span class="num" data-fill="nfl.forest.acc">–</span>) but a <em>lower</em> macro F1 than logistic regression (<span class="num" data-fill="nfl.forest.mf1">–</span> vs <span class="num" data-fill="nfl.logistic.mf1">–</span>). Its rare-class behavior is the reason: on the holdout it caught <strong><span class="num" data-fill="nfl.spike.caught">–</span> of <span class="num" data-fill="nfl.spike.support">–</span> QB spikes</strong> (recall <span class="num" data-fill="nfl.spike.recall">–</span>, F1 <span class="num" data-fill="nfl.spike.f1">–</span>), flagging only two plays as spikes across the two holdout seasons. It was precise about those two and blind to the other 119. Logistic regression caught <span class="num" data-fill="nfl.spike.logistic-caught">–</span> of <span class="num" data-fill="nfl.spike.support">–</span> spikes (recall <span class="num" data-fill="nfl.spike.logistic-recall">–</span>, F1 <span class="num" data-fill="nfl.spike.logistic-f1">–</span>), at the cost of more false spike flags.</p>
+      <p>This is the honest headline of the experiment: accuracy and macro F1 disagree, the disagreement is concentrated in the rarest class, and a single-number summary cannot carry that story. Both facts are reported together, and neither model is described as universally best.</p>
+    </div>
+
+    <h3>QB spike detection by model</h3>
+    <p>Spikes are rare by design: <span class="num" data-fill="nfl.spike.support">–</span> of <span class="num" data-fill="nfl.test_rows">–</span> holdout plays (<span class="num" data-fill="nfl.spike.share">–</span>). Counts are read from each model's confusion matrix; recall and F1 come from the same report.</p>
+    <div class="table-wrap table-wrap--compact" role="region" aria-label="QB spike detection by model" tabindex="0">
+      <table class="metrics-table">
+        <caption>QB spike detection on the chronological holdout</caption>
+        <thead>
+          <tr>
+            <th scope="col">Model</th>
+            <th scope="col">Plays flagged as spike</th>
+            <th scope="col">Spikes caught</th>
+            <th scope="col">Recall</th>
+            <th scope="col">F1</th>
+          </tr>
+        </thead>
+        <tbody id="spike-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="protocol" aria-labelledby="protocol-heading">
+    <h2 id="protocol-heading">What was trained, and on what</h2>
+    <p class="section-intro">Numbers here come from the training metadata saved alongside the models. The known data-quality problems in the source file are handled explicitly rather than silently.</p>
+    <div class="card-grid">
+      <article class="card">
+        <h3>Training window</h3>
+        <dl class="facts">
+          <div><dt>Plays</dt><dd class="num" data-fill="nfl.train_rows">–</dd></div>
+          <div><dt>Games</dt><dd class="num" data-fill="nfl.train_games">–</dd></div>
+          <div><dt>Dates</dt><dd class="num" data-fill="nfl.train_dates">–</dd></div>
+          <div><dt>Class mix</dt><dd data-fill="nfl.train_mix">–</dd></div>
+        </dl>
+      </article>
+      <article class="card">
+        <h3>Chronological holdout</h3>
+        <dl class="facts">
+          <div><dt>Plays</dt><dd class="num" data-fill="nfl.test_rows">–</dd></div>
+          <div><dt>Games</dt><dd class="num" data-fill="nfl.test_games">–</dd></div>
+          <div><dt>Dates</dt><dd class="num" data-fill="nfl.test_dates">–</dd></div>
+          <div><dt>Cutoff</dt><dd class="num" data-fill="nfl.cutoff">–</dd></div>
+          <div><dt>Class mix</dt><dd data-fill="nfl.test_mix">–</dd></div>
+        </dl>
+      </article>
+      <article class="card">
+        <h3>Source cleaning</h3>
+        <dl class="facts">
+          <div><dt>Raw rows</dt><dd class="num" data-fill="nfl.cleaning.raw">–</dd></div>
+          <div><dt>Exact duplicate rows removed</dt><dd class="num" data-fill="nfl.cleaning.dups">–</dd></div>
+          <div><dt>Conflicting ID groups</dt><dd class="num" data-fill="nfl.cleaning.groups">–</dd></div>
+          <div><dt>Ambiguous game(s) excluded</dt><dd class="num" data-fill="nfl.cleaning.games">–</dd></div>
+          <div><dt>Rows removed with them</dt><dd class="num" data-fill="nfl.cleaning.rows">–</dd></div>
+          <div><dt>Retained rows</dt><dd class="num" data-fill="nfl.cleaning.retained">–</dd></div>
+        </dl>
+        <p class="card-note">All conflicting ID groups sat in one game (2011-12-04) where only the timeouts remaining disagreed; the whole game was removed with the explicit <code>--exclude-ambiguous-games</code> flag so previous-play context stays coherent. The library default refuses to guess and rejects such sources instead.</p>
+      </article>
+      <article class="card">
+        <h3>Environment &amp; settings</h3>
+        <dl class="facts">
+          <div><dt>Python</dt><dd class="num" data-fill="nfl.python">–</dd></div>
+          <div><dt>scikit-learn</dt><dd class="num" data-fill="nfl.sklearn">–</dd></div>
+          <div><dt>numpy / pandas</dt><dd class="num" data-fill="nfl.pandas">–</dd></div>
+          <div><dt>Seed / trees / jobs</dt><dd class="num" data-fill="nfl.settings">–</dd></div>
+          <div><dt>Source file</dt><dd class="num" data-fill="nfl.source_file">–</dd></div>
+          <div><dt>Source size</dt><dd class="num" data-fill="nfl.source_bytes">–</dd></div>
+        </dl>
+        <p class="card-note">SHA-256 of the source file: <code class="hash" data-fill="nfl.sha256">–</code></p>
+      </article>
+    </div>
+    <p class="field-note">Preparation keeps only plays whose type is one of the six targets; other raw play types serve solely as previous-play context, so the split plays above total fewer rows than the retained source. Features never use the current play's outcome, and the previous-play context never crosses a game boundary.</p>
+  </section>
+
+  <section id="figures" aria-labelledby="figures-heading">
+    <h2 id="figures-heading">Original result figures</h2>
+    <p class="section-intro">Generated directly by the repository's <code>evaluate</code> command from the same predictions behind the tables. Figures are original matplotlib output, not screenshots or third-party images.</p>
+    <div class="figure-grid">
+      <figure class="figure figure--wide">
+        <img src="../results/comparison.png" alt="Grouped bar chart of holdout accuracy and macro F1 for the majority-class, down-and-distance, logistic-regression and random-forest models." loading="lazy" decoding="async">
+        <figcaption>Holdout accuracy and macro F1 by model. The forest leads on accuracy; logistic regression leads on macro F1 — the trade-off described above.</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="../results/random_forest_confusion.png" alt="Confusion matrix heatmap for the random forest: rows are true play types, columns are predicted play types, with the pass and run rows dominating and a nearly empty QB spike row." loading="lazy" decoding="async">
+        <figcaption>Random forest confusion matrix over all six play types. Most mass sits on the pass/run diagonal; the QB spike row is almost empty because only two spikes were predicted.</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="../results/per_class_f1.png" alt="Grouped bar chart of per-class F1 for all four models across the six play types, showing strong punt and field-goal scores and very weak QB spike scores." loading="lazy" decoding="async">
+        <figcaption>Per-class F1 by model. Rare classes are where the models separate; no model scores well on QB spike.</figcaption>
+      </figure>
+      <figure class="figure figure--wide">
+        <img src="../results/random_forest_importance.png" alt="Horizontal bar chart of random forest impurity-based feature importances, led by previous play type, down, yards to go and field position." loading="lazy" decoding="async">
+        <figcaption>Impurity-based feature importance. This is a descriptive, in-model ranking with a known bias toward high-cardinality features; it is not a causal claim, and correlated features split credit between them.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="per-class" aria-labelledby="per-class-heading">
+    <h2 id="per-class-heading">Per-class precision, recall, F1 and support</h2>
+    <p class="section-intro">Choose a model to see its full classification report on the holdout. Support is the number of holdout plays of that type; macro average weights each class equally, weighted average weights by support. Values are read from <code>results/metrics.json</code>.</p>
+    <div class="control-row">
+      <label for="model-select">Model</label>
+      <select id="model-select">
+        <option value="random_forest" selected>Random forest (default)</option>
+        <option value="logistic_regression">Logistic regression</option>
+        <option value="down_distance">Down &amp; distance baseline</option>
+        <option value="majority">Majority-class baseline</option>
+      </select>
+      <p id="per-class-summary" class="control-summary" aria-live="polite">Loading&hellip;</p>
+    </div>
+    <div class="table-wrap" role="region" aria-label="Per-class holdout metrics table (scrolls horizontally on small screens)" tabindex="0">
+      <table class="metrics-table" id="per-class-table">
+        <caption id="per-class-caption">Per-class metrics on the chronological holdout.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Play type</th>
+            <th scope="col">Precision</th>
+            <th scope="col">Recall</th>
+            <th scope="col">F1</th>
+            <th scope="col">Support</th>
+          </tr>
+        </thead>
+        <tbody id="per-class-body">
+          <tr><td colspan="5">Loading measured metrics&hellip;</td></tr>
+        </tbody>
+        <tfoot id="per-class-foot"></tfoot>
+      </table>
+    </div>
+    <p class="field-note">The forest is preselected because it was the repository's default prediction model before evaluation — not because it wins every column. Compare its QB spike row with logistic regression's; that difference is the macro-F1 story. Raw JSON: <a href="../results/metrics.json">results/metrics.json</a>.</p>
+  </section>
+
+  <section id="examples" aria-labelledby="examples-heading">
+    <h2 id="examples-heading">Supporting examples</h2>
+    <p class="section-intro">Three self-contained scripts, each with its own measured JSON and figures. They demonstrate mechanics on small, deliberately limited data; they make no performance claims about real-world problems. Runner commands and per-example limitations live in <a href="../examples/README.md">examples/README.md</a>; each command below was run from the repository root and wrote into <code>results/examples/</code>.</p>
+
+    <article class="example" id="example-linear" aria-labelledby="example-linear-heading">
+      <h3 id="example-linear-heading">Linear regression: do three solvers agree?</h3>
+      <p>A seeded, noisy linear relationship with <span class="num" data-fill="linear.n_features">–</span> features and known coefficients is fitted three ways on the same training rows: closed-form least squares, scikit-learn's <code>LinearRegression</code>, and an original batch gradient descent that scales features with training-only statistics.</p>
+      <dl class="facts facts--inline">
+        <div><dt>Held-out R&sup2;</dt><dd class="num" data-fill="linear.r2">–</dd></div>
+        <div><dt>Held-out MSE</dt><dd class="num" data-fill="linear.mse">–</dd></div>
+        <div><dt>Largest solver disagreement</dt><dd class="num" data-fill="linear.agree">–</dd></div>
+        <div><dt>Train / held-out rows</dt><dd class="num" data-fill="linear.rows">–</dd></div>
+        <div><dt>True coefficients</dt><dd class="num" data-fill="linear.true_coeffs">–</dd></div>
+        <div><dt>Fitted coefficients</dt><dd class="num" data-fill="linear.fitted_coeffs">–</dd></div>
+      </dl>
+      <p class="example-data"><strong>Data:</strong> synthetic — generated inside the script from a recorded seed; no external dataset. <strong>Limitation:</strong> one well-conditioned design compares solvers, not modeling strategies, and says nothing about real regression data.</p>
+      <div class="figure-grid">
+        <figure class="figure">
+          <img src="../results/examples/linear_regression_convergence.png" alt="Line chart of batch gradient descent training mean squared error versus epoch on a log scale for three learning rates, each converging toward the analytical least-squares optimum." loading="lazy" decoding="async">
+          <figcaption>Gradient descent loss per epoch at three learning rates, against the closed-form training optimum. Converged values are reported in the JSON, not read off the chart.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../results/examples/linear_regression_coefficients.png" alt="Grouped bar chart comparing the true coefficients with the estimates from least squares, sklearn and gradient descent." loading="lazy" decoding="async">
+          <figcaption>Estimated parameters versus the generator's true coefficients; the three solvers are visually indistinguishable.</figcaption>
+        </figure>
+        <figure class="figure figure--wide">
+          <img src="../results/examples/linear_regression_holdout.png" alt="Two scatter panels: predicted versus held-out target values, and residuals versus held-out target, for the three solvers." loading="lazy" decoding="async">
+          <figcaption>Held-out predictions and residuals for the three solvers, computed on rows used by no fit.</figcaption>
+        </figure>
+      </div>
+      <details class="command">
+        <summary>Command that produced this evidence</summary>
+        <pre><code>uv run python examples/linear_regression.py --output-dir results/examples</code></pre>
+        <p>Raw numbers: <a href="../results/examples/linear_regression_metrics.json">linear_regression_metrics.json</a> &middot; source: <a href="../examples/linear_regression.py">examples/linear_regression.py</a></p>
+      </details>
+    </article>
+
+    <article class="example" id="example-classification" aria-labelledby="example-classification-heading">
+      <h3 id="example-classification-heading">Classification: a bundled clinical dataset and a fictional corpus</h3>
+      <p>Two independent studies that share a measurement style but never compete. First, KNN and Gaussian naive Bayes classify the breast-cancer dataset bundled with scikit-learn (a clinical tabular dataset, <span class="num" data-fill="classification.samples">–</span> samples, <span class="num" data-fill="classification.features">–</span> features) on a stratified holdout with all fitting done on the training split. Second, TF-IDF plus multinomial naive Bayes is applied to a tiny spam/ham corpus written for this repository — explicitly fictional, not a real SMS dataset.</p>
+      <dl class="facts facts--inline">
+        <div><dt>KNN accuracy</dt><dd class="num" data-fill="classification.knn.acc">–</dd></div>
+        <div><dt>KNN macro F1</dt><dd class="num" data-fill="classification.knn.mf1">–</dd></div>
+        <div><dt>Gaussian NB accuracy</dt><dd class="num" data-fill="classification.gnb.acc">–</dd></div>
+        <div><dt>Gaussian NB macro F1</dt><dd class="num" data-fill="classification.gnb.mf1">–</dd></div>
+        <div><dt>Clinical holdout rows</dt><dd class="num" data-fill="classification.holdout">–</dd></div>
+        <div><dt>Toy corpus size</dt><dd class="num" data-fill="classification.toy.n">–</dd></div>
+        <div><dt>Toy 5-fold macro F1</dt><dd class="num" data-fill="classification.toy.cv">–</dd></div>
+        <div><dt>Toy vocabulary</dt><dd class="num" data-fill="classification.toy.vocab">–</dd></div>
+      </dl>
+      <p class="example-data"><strong>Data:</strong> breast cancer is a real clinical dataset bundled with scikit-learn (no download); the messages are fictional text written for this repository. <strong>Limitations:</strong> the clinical numbers describe one stratified split, not the dataset as a whole, and Gaussian naive Bayes is scale invariant, so its scaler only keeps the pipeline convention. The toy scores demonstrate TF-IDF and naive-Bayes mechanics on about thirty sentences: they are not spam-filter quality and must not be compared with SMS benchmarks.</p>
+      <div class="figure-grid">
+        <figure class="figure">
+          <img src="../results/examples/classification_breast_cancer_comparison.png" alt="Two panels: grouped bars of accuracy and macro F1 for KNN and Gaussian naive Bayes on the breast-cancer holdout, and a cross-validation curve for the KNN neighbor count." loading="lazy" decoding="async">
+          <figcaption>Clinical holdout scores and the training-side KNN neighbor selection. The neighbor count is chosen by 5-fold cross-validation on the training split only.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../results/examples/classification_breast_cancer_confusion.png" alt="Two side-by-side confusion matrices for KNN and Gaussian naive Bayes on the breast-cancer holdout, with malignant and benign row and column labels." loading="lazy" decoding="async">
+          <figcaption>Confusion matrices for the two clinical pipelines on the held-out rows.</figcaption>
+        </figure>
+        <figure class="figure">
+          <img src="../results/examples/classification_toy_text.png" alt="Two panels: the toy-corpus holdout confusion matrix and the per-fold macro F1 of the 5-fold cross-validation." loading="lazy" decoding="async">
+          <figcaption>Toy spam/ham corpus: holdout confusion and cross-validation folds. With eight holdout messages, a perfect score demonstrates the machinery, not generalization.</figcaption>
+        </figure>
+      </div>
+      <details class="command">
+        <summary>Command that produced this evidence</summary>
+        <pre><code>uv run python examples/classification.py --output-dir results/examples</code></pre>
+        <p>Raw numbers: <a href="../results/examples/classification_metrics.json">classification_metrics.json</a> &middot; source: <a href="../examples/classification.py">examples/classification.py</a></p>
+      </details>
+    </article>
+
+    <article class="example" id="example-clustering" aria-labelledby="example-clustering-heading">
+      <h3 id="example-clustering-heading">Clustering: separated blobs and an original synthetic image</h3>
+      <p>k-means is swept over a small range of cluster counts on <span class="num" data-fill="clustering.samples">–</span> seeded points from four known centers, then applied to an original synthetic RGB scene rendered in numpy: the palette compresses <span class="num" data-fill="clustering.colors.source">–</span> unique colors down to <span class="num" data-fill="clustering.colors.palette">–</span>.</p>
+      <dl class="facts facts--inline">
+        <div><dt>Selected k</dt><dd class="num" data-fill="clustering.k">–</dd></div>
+        <div><dt>Silhouette at k</dt><dd class="num" data-fill="clustering.silhouette">–</dd></div>
+        <div><dt>Adjusted Rand index</dt><dd class="num" data-fill="clustering.ari">–</dd></div>
+        <div><dt>Scene size</dt><dd class="num" data-fill="clustering.image.size">–</dd></div>
+        <div><dt>Quantization RMSE</dt><dd class="num" data-fill="clustering.image.rmse">–</dd></div>
+        <div><dt>Quantization PSNR</dt><dd class="num" data-fill="clustering.image.psnr">–</dd></div>
+        <div><dt>Index stream ratio</dt><dd class="num" data-fill="clustering.image.ratio">–</dd></div>
+      </dl>
+      <p class="example-data"><strong>Data:</strong> synthetic — blobs and the raster are generated in the script from a recorded seed; no photograph or third-party image is used. <strong>Limitations:</strong> results describe these separated clusters and this exact scene, noise level and palette size; the compression ratio is arithmetic for an indexed palette, not a measured file size.</p>
+      <div class="figure-grid">
+        <figure class="figure">
+          <img src="../results/examples/clustering_blobs.png" alt="Two panels: a scatter plot of 600 synthetic points colored by the k-means partition at four clusters with centroids, and inertia and silhouette curves over the tested cluster counts." loading="lazy" decoding="async">
+          <figcaption>Four-center blobs: the k-means partition and the k-selection diagnostics. Inertia always falls with k; silhouette is what picks the count.</figcaption>
+        </figure>
+        <figure class="figure figure--wide">
+          <img src="../results/examples/clustering_image_quantization.png" alt="Four panels: the original synthetic RGB scene, its quantization to eight colors, the extracted palette with pixel shares, and a per-pixel absolute error map." loading="lazy" decoding="async">
+          <figcaption>Original synthetic scene, its eight-color k-means approximation, the palette shares and the per-pixel error map.</figcaption>
+        </figure>
+      </div>
+      <details class="command">
+        <summary>Command that produced this evidence</summary>
+        <pre><code>uv run python examples/clustering.py --output-dir results/examples</code></pre>
+        <p>Raw numbers: <a href="../results/examples/clustering_metrics.json">clustering_metrics.json</a> &middot; source: <a href="../examples/clustering.py">examples/clustering.py</a></p>
+      </details>
+    </article>
+  </section>
+
+  <section id="scope" aria-labelledby="scope-heading">
+    <h2 id="scope-heading">Scope, rights and honest limits</h2>
+    <div class="card-grid card-grid--two">
+      <article class="card">
+        <h3>Nothing is deployed</h3>
+        <ul>
+          <li>The forest is the default prediction model, but its probabilities are <strong>uncalibrated</strong>. They are model scores, not probabilities that should be trusted or acted on.</li>
+          <li>This page is a static report. It is not an inference service, and there is no hosted demo: serving predictions would require honest pre-play input that a web form cannot verify. The repository's <code>predict</code> command exists for local, context-complete input only.</li>
+          <li>No production, betting, or scouting use is claimed or implied.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>Historical 2024 scores are not comparable</h3>
+        <p>The author's 2024 coursework reported roughly 0.75&ndash;0.77 micro-averaged F1 under a different protocol (a random row-level split that leaks future games into training). Those figures are narrative history, are not reproduced in this repository, and must not be compared with the numbers on this page. The measurements here come from one game-separated chronological holdout, evaluated once.</p>
+      </article>
+      <article class="card">
+        <h3>Data rights are unresolved</h3>
+        <p>The NFL play-by-play source is published on Kaggle with the license field <code>Unknown</code>, and upstream NFL data rights are unresolved. This repository therefore ships <strong>no raw rows, no play descriptions, no player identifiers, and no model files</strong> — only original code and aggregate derived results. Obtain the data yourself from the <a href="https://www.kaggle.com/datasets/maxhorowitz/nflplaybyplay2009to2016">Kaggle dataset page</a>; details in <a href="data.md">docs/data.md</a> and <a href="provenance.md">docs/provenance.md</a>.</p>
+      </article>
+      <article class="card">
+        <h3>Licensing and authorship</h3>
+        <p>Original code, tests, documentation, examples and figures are MIT-licensed (<a href="../LICENSE">LICENSE</a>). Course materials, the 2024 notebooks and the 2024 report are deliberately excluded. The 2026 refresh, including this page, was AI-assisted under the author's direction: it is new work, not a copy of the coursework and not hand-typed line by line.</p>
+      </article>
+    </div>
+    <h3>Primary sources and next reads</h3>
+    <ul class="source-list">
+      <li><a href="../results/metrics.json">results/metrics.json</a> — every NFL number and the training metadata used by this page.</li>
+      <li><a href="data.md">docs/data.md</a> — dataset version, checksum, reproduction commands and rights caveats.</li>
+      <li><a href="features.md">docs/features.md</a> — feature contract, leakage rules and the clock-running proxy.</li>
+      <li><a href="provenance.md">docs/provenance.md</a> — what is original, what is excluded, and claim boundaries.</li>
+      <li><a href="../src/nfl_showcase/features.py">src/nfl_showcase/features.py</a>, <a href="../src/nfl_showcase/models.py">models.py</a>, <a href="../src/nfl_showcase/cli.py">cli.py</a> — the implementation behind these numbers.</li>
+      <li><a href="https://github.com/calvertjadon/machine-learning-showcase">github.com/calvertjadon/machine-learning-showcase</a> — the public repository home.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Machine-Learning Showcase — original work by Jadon Calvert. Source: the repository's own measured <code>results/&lowast;.json</code>. MIT license for original material; no NFL data, model files or course documents are redistributed here.</p>
+    <p><a href="#main">Back to top</a> &middot; <a href="../README.md">README</a> &middot; <a href="provenance.md">Provenance</a> &middot; <a href="data.md">Data</a> &middot; <a href="features.md">Features</a></p>
+  </div>
+</footer>
+
+<noscript>
+  <div class="wrap">
+    <p class="alert alert--error">This report loads its measured numbers from <code>results/&lowast;.json</code> with JavaScript. Your browser has JavaScript disabled, so the tables and cards cannot be filled; the narrative above and the figures remain available, and the raw values can be read directly in <a href="../results/metrics.json">results/metrics.json</a>.</p>
+  </div>
+</noscript>
+</body>
+</html>

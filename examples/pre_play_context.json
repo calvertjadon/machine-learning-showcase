@@ -1,0 +1,18 @@
+{
+  "yardline_100": 38.0,
+  "quarter_seconds_remaining": 300.0,
+  "half_seconds_remaining": 300.0,
+  "qtr": 4,
+  "down": 2.0,
+  "ydstogo": 4.0,
+  "posteam_timeouts_remaining": 2,
+  "defteam_timeouts_remaining": 3,
+  "score_differential": -3.0,
+  "previous_yards_gained": 6.0,
+  "clock_running_proxy": 1,
+  "home_team": "BUF",
+  "away_team": "MIA",
+  "posteam": "MIA",
+  "defteam": "BUF",
+  "previous_play_type": "run"
+}
